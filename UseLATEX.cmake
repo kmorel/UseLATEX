@@ -1,7 +1,7 @@
 #
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.1.0
+# Version: 1.1.1
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -20,14 +20,15 @@
 #
 # ADD_LATEX_DOCUMENT(<tex_file> [<image_dir>]
 #                       [BIBFILES <bib_files>] [INPUTS <input_tex_files>]
-#                       [USE_INDEX])
+#                       [USE_INDEX] [NO_CONFIGURE])
 #       Adds targets that compile <tex_file>.  It is assumed that
 #       ADD_LATEX_IMAGES has been called in <image_dir>.  (Note that the
 #       dir parameter is different for the two commands.)  <bib_files> are
 #       the bibliography files that are also copied to the output
 #       directory.  CONFIGURE_FILE (with @ONLY flag) is also run on
-#       <tex_file> and all # the <input_tex_files>.  Also copies any .cls
-#       .bst .clo files from the source directory to the binary directory.
+#       <tex_file> and on all the <input_tex_files> unless the NO_CONFIGURE
+#       option is given.  Also copies any .cls .bst .clo files from the
+#       source directory to the binary directory.
 #       The following targets are made:
 #               dvi: Makes <name>.dvi
 #               pdf: Makes <name>.pdf using pdflatex.
@@ -52,6 +53,10 @@
 #       separately from the entire document.
 #
 # History:
+#
+# 1.1.1 Added the NO_CONFIGURE option.  The @ character can be used when
+#       specifying table column separators.  If two or more are used, then
+#       will incorrectly substitute them.
 #
 # 1.1.0 Added ability include multiple bib files.  Added ability to do copy
 #       sub-tex files for multipart tex files.
@@ -300,7 +305,7 @@ ENDMACRO(LATEX_PARSE_ARGUMENTS)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file> [<image_dir>]\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...])"
+    "${message}\nUsage: ${command}(<tex_file> [<image_dir>]\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [USE_INDEX] [NO_CONFIGURE])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -308,7 +313,8 @@ ENDMACRO(LATEX_USAGE command message)
 # variables LATEX_TARGET, LATEX_IMAGE_DIR, LATEX_BIBFILES, and
 # LATEX_INPUTS.
 MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
-  LATEX_PARSE_ARGUMENTS(LATEX "BIBFILES;INPUTS" "USE_INDEX" ${ARGN})
+  LATEX_PARSE_ARGUMENTS(LATEX "BIBFILES;INPUTS" "USE_INDEX;NO_CONFIGURE"
+    ${ARGN})
 
   # The first argument is the target latex file.
   IF (LATEX_DEFAULT_ARGS)
@@ -417,9 +423,14 @@ ENDMACRO(ADD_LATEX_TARGETS)
 MACRO(ADD_LATEX_DOCUMENT)
   PARSE_ADD_LATEX_ARGUMENTS(ADD_LATEX_DOCUMENT ${ARGV})
 
+  IF (LATEX_NO_CONFIGURE)
+    SET(LATEX_CONFIGURE_FLAGS COPYONLY)
+  ELSE (LATEX_NO_CONFIGURE)
+    SET(LATEX_CONFIGURE_FLAGS @ONLY)
+  ENDIF (LATEX_NO_CONFIGURE)
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${LATEX_TARGET}.tex
     ${LATEX_TARGET}.tex
-    @ONLY)
+    ${LATEX_CONFIGURE_FLAGS})
   ADD_CUSTOM_TARGET(${LATEX_TARGET}.tex
     ${CMAKE_COMMAND} .
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${LATEX_TARGET}.tex
@@ -436,7 +447,8 @@ MACRO(ADD_LATEX_DOCUMENT)
   ENDFOREACH (bib_file)
 
   FOREACH (input ${LATEX_INPUTS})
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${input} ${input} @ONLY)
+    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${input} ${input}
+      ${LATEX_CONFIGURE_FLAGS})
     ADD_CUSTOM_TARGET(${input}
       ${CMAKE_COMMAND} .
       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${input}
