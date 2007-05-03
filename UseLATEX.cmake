@@ -1,7 +1,6 @@
-#
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.2.0
+# Version: 1.3.0
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -13,27 +12,27 @@
 #
 # The following MACROS are defined:
 #
-# ADD_LATEX_IMAGES(<dir>)
-#       Searches <dir> for images files and creates targets that convert
-#       them to types that various LaTeX compilers understand.  Makes the
-#       targets latex_images_ps and latex_images_pdf.
-#
-# ADD_LATEX_DOCUMENT(<tex_file> [<image_dir>]
-#                       [BIBFILES <bib_files>] [INPUTS <input_tex_files>]
+# ADD_LATEX_DOCUMENT(<tex_file>
+#                       [BIBFILES <bib_files>]
+#                       [INPUTS <input_tex_files>]
+#                       [IMAGE_DIRS] <image_directories>
+#                       [IMAGES] <image_files>
 #                       [CONFIGURE] <tex_files>
 #                       [USE_INDEX] [DEFAULT_PDF])
-#       Adds targets that compile <tex_file>.  It is assumed that
-#       ADD_LATEX_IMAGES has been called in <image_dir>.  (Note that the
-#       dir parameter is different for the two commands.)  The latex
-#       program is picky about where files are located, so all input files
-#       are copied from the source directory to the binary directory.  This
-#       includes the target tex file, any tex file listed with the INPUTS
-#       option, the bibliography files listed with the BIBFILES option, and
-#       any .cls, .bst, and .clo files found in the current source
-#       directory.  Any tex files also listed with the INPUTS option are
-#       also processed with the CMake CONFIGURE_FILE command (with the
-#       @ONLY flag.  Any file listed in INPUTS but not the target tex file
-#       or listed with INPUTS has no effect.
+#       Adds targets that compile <tex_file>.  The latex output is placed
+#       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
+#       not set.  The latex program is picky about where files are located,
+#       so all input files are copied from the source directory to the
+#       output directory.  This includes the target tex file, any tex file
+#       listed with the INPUTS option, the bibliography files listed with
+#       the BIBFILES option, and any .cls, .bst, and .clo files found in
+#       the current source directory.  Images found in the IMAGE_DIRS
+#       directories or listed by IMAGES are also copied to the output
+#       directory and coverted to an appropriate format if necessary.  Any
+#       tex files also listed with the CONFIGURE option are also processed
+#       with the CMake CONFIGURE_FILE command (with the @ONLY flag.  Any
+#       file listed in CONFIGURE but not the target tex file or listed with
+#       INPUTS has no effect.
 #
 #       The following targets are made:
 #               dvi: Makes <name>.dvi
@@ -50,16 +49,31 @@
 #       If the argument USE_INDEX is given, then commands to build an index
 #       are made.
 #
-# ADD_LATEX_TARGETS(<tex_file> [<image_dir>]
-#                       [BIBFILES <bib_files>] [INPUTS <input_tex_files>]
-#                       [USE_INDEX])
+# ADD_LATEX_TARGETS(<tex_file>
+#                       [BIBFILES <bib_files>]
+#                       [INPUTS <input_tex_files>]
+#                       [IMAGE_DIRS] <image_directories>
+#                       [IMAGES] <image_files>
+#                       [CONFIGURE] <tex_files>
+#                       [USE_INDEX] [DEFAULT_PDF])
 #       Like ADD_LATEX_DOCUMENT, except no files are configured or copied.
-#       The files are assumed to already be added to the binary directory.
+#       The files are assumed to already be added to the output directory.
 #       This varient is helpful if one set of latex files makes different
 #       varients of documents.  For example, with building chapters
 #       separately from the entire document.
 #
 # History:
+#
+# 1.3.0 Added a LATEX_OUTPUT_PATH variable that allows you or the user to
+#       specify where the built latex documents to go.  This is especially
+#       handy if you want to do in-source builds.
+#
+#       Removed the ADD_LATEX_IMAGES macro and absorbed the functionality
+#       into ADD_LATEX_DOCUMENT.  The old interface was always kind of
+#       clunky anyway since you had to specify the image directory in both
+#       places.  It also made supporting LATEX_OUTPUT_PATH problematic.
+#
+#       Added support for jpeg files.
 #
 # 1.2.0 Changed the configuration options yet again.  Removed the NO_CONFIGURE
 #       Replaced it with a CONFIGURE option that lists input files for which
@@ -84,11 +98,28 @@
 # 0.4.0 First version posted to CMake Wiki.
 #
 
-IF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-  MESSAGE(SEND_ERROR "LaTeX files must be built out of source.")
-ENDIF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+SET(LATEX_OUTPUT_PATH "${LATEX_OUTPUT_PATH}"
+  CACHE PATH "If non empty, specifies the location to place LaTeX output."
+  )
 
-INCLUDE(${CMAKE_ROOT}/Modules/FindLATEX.cmake)
+MACRO(LATEX_GET_OUTPUT_PATH var)
+  SET(${var})
+  IF (LATEX_OUTPUT_PATH)
+    IF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      MESSAGE(SEND_ERROR "You cannot set LATEX_OUTPUT_PATH to the same directory that contains LaTeX input files.")
+    ELSE ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      SET(${var} "${LATEX_OUTPUT_PATH}")
+    ENDIF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  ELSE (LATEX_OUTPUT_PATH)
+    IF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      MESSAGE(SEND_ERROR "LaTeX files must be built out of source or you must set LATEX_OUTPUT_PATH.")
+    ELSE ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      SET(${var} "${CMAKE_CURRENT_BINARY_DIR}")
+    ENDIF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  ENDIF (LATEX_OUTPUT_PATH)
+ENDMACRO(LATEX_GET_OUTPUT_PATH)
+
+FIND_PACKAGE(LATEX)
 MARK_AS_ADVANCED(CLEAR
   LATEX_COMPILER
   PDFLATEX_COMPILER
@@ -167,6 +198,7 @@ ELSE (LATEX_SMALL_IMAGES)
   SET(LATEX_OPPOSITE_RASTER_SCALE 16)
 ENDIF (LATEX_SMALL_IMAGES)
 
+# Helpful list macros.
 MACRO(LATEX_CAR var)
   SET(${var} ${ARGV1})
 ENDMACRO(LATEX_CAR)
@@ -174,101 +206,125 @@ MACRO(LATEX_CDR var junk)
   SET(${var} ${ARGN})
 ENDMACRO(LATEX_CDR)
 
-MACRO(ADD_LATEX_IMAGES dir)
-  FILE(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir})
+MACRO(LATEX_LIST_CONTAINS var value)
+  SET(${var})
+  FOREACH (value2 ${ARGN})
+    IF (${value} STREQUAL ${value2})
+      SET(${var} TRUE)
+    ENDIF (${value} STREQUAL ${value2})
+  ENDFOREACH (value2)
+ENDMACRO(LATEX_LIST_CONTAINS)
 
-  # This command just makes sure we rebuild images of LATEX_SMALL_IMAGES
-  # changed.
-  ADD_CUSTOM_COMMAND(OUTPUT raster_image_rescale_${LATEX_RASTER_SCALE}
-    COMMAND ${CMAKE_COMMAND}
-    ARGS -E remove raster_image_rescale_${LATEX_OPPOSITE_RASTER_SCALE} \; ${CMAKE_COMMAND} -E echo Built > raster_image_rescale_${LATEX_RASTER_SCALE}
-    )
+# Just holds extensions for known image types.  They should all be lower case.
+SET(LATEX_DVI_VECTOR_IMAGE_EXTENSIONS .eps)
+SET(LATEX_DVI_RASTER_IMAGE_EXTENSIONS)
+SET(LATEX_DVI_IMAGE_EXTENSIONS
+  ${LATEX_DVI_VECTOR_IMAGE_EXTENSIONS} ${LATEX_DVI_RASTER_IMAGE_EXTENSIONS})
+SET(LATEX_PDF_VECTOR_IMAGE_EXTENSIONS .pdf)
+SET(LATEX_PDF_RASTER_IMAGE_EXTENSIONS .png .jpeg .jpg)
+SET(LATEX_PDF_IMAGE_EXTENSIONS
+  ${LATEX_PDF_VECTOR_IMAGE_EXTENSIONS} ${LATEX_PDF_RASTER_IMAGE_EXTENSIONS})
+SET(LATEX_IMAGE_EXTENSIONS
+  ${LATEX_DVI_IMAGE_EXTENSIONS} ${LATEX_PDF_IMAGE_EXTENSIONS})
 
-  FILE(GLOB png_file_list ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*.png)
-  FOREACH (png_file ${png_file_list})
-    GET_FILENAME_COMPONENT(image_name ${png_file} NAME_WE)
-    SET(png_out_file ${CMAKE_CURRENT_BINARY_DIR}/${dir}/${image_name}.png)
-    ADD_CUSTOM_COMMAND(OUTPUT ${png_out_file}
-      COMMAND ${IMAGEMAGICK_CONVERT}
-      ARGS ${png_file} -resize ${LATEX_RASTER_SCALE}% ${png_out_file}
-      DEPENDS ${png_file} raster_image_rescale_${LATEX_RASTER_SCALE}
-      COMMENT "png image"
-      )
-    SET(OUT_PNG_FILES ${OUT_PNG_FILES} ${png_out_file})
-    IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.eps)
-      # An eps file already exists.  No need to convert.
-    ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.eps)
-      SET(eps_file ${CMAKE_CURRENT_BINARY_DIR}/${dir}/${image_name}.eps)
-      ADD_CUSTOM_COMMAND(OUTPUT ${eps_file}
+# Makes custom commands to convert a file to a particular type.
+MACRO(LATEX_CONVERT_IMAGE output_files input_file output_extension convert_flags
+    output_extensions other_files)
+  SET(input_dir ${CMAKE_CURRENT_SOURCE_DIR})
+  LATEX_GET_OUTPUT_PATH(output_dir)
+
+  GET_FILENAME_COMPONENT(extension "${input_file}" EXT)
+
+  STRING(REGEX REPLACE "\\.[^.]*\$" ${output_extension} output_file
+    "${input_file}")
+
+  LATEX_LIST_CONTAINS(is_type ${extension} ${output_extensions})
+  IF (is_type)
+    IF (convert_flags)
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${output_file}
         COMMAND ${IMAGEMAGICK_CONVERT}
-        ARGS ${png_file} -resize ${LATEX_RASTER_SCALE}% ${eps_file}
-        DEPENDS ${png_file} raster_image_rescale_${LATEX_RASTER_SCALE}
-        COMMENT "postscript image"
+        ARGS ${input_dir}/${input_file} ${convert_flags}
+          ${output_dir}/${output_file}
+        DEPENDS ${input_dir}/${input_file}
         )
-      SET(OUT_EPS_FILES ${OUT_EPS_FILES} ${eps_file})
-    ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.eps)
-  ENDFOREACH (png_file)
+      SET(${output_files} ${${output_files}} ${output_dir}/${output_file})
+    ELSE (convert_flags)
+      # As a shortcut, we can just copy the file.
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${input_file}
+        COMMAND ${CMAKE_COMMAND}
+        ARGS -E copy ${input_dir}/${input_file} ${output_dir}/${input_file}
+        DEPENDS ${input_dir}/${input_file}
+        )
+      SET(${output_files} ${${output_files}} ${output_dir}/${input_file})
+    ENDIF (convert_flags)
+  ELSE (is_type)
+    SET(do_convert TRUE)
+    # Check to see if there is another input file of the appropriate type.
+    FOREACH(valid_extension ${output_extensions})
+      STRING(REGEX REPLACE "\\.[^.]*\$" ${output_extension} try_file
+        "${input_file}")
+      LATEX_LIST_CONTAINS(has_native_file "${try_file}" ${other_files})
+      IF (has_native_file)
+        SET(do_convert FALSE)
+      ENDIF (has_native_file)
+    ENDFOREACH(valid_extension)
 
-  FILE(GLOB eps_file_list ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*.eps)
-  FOREACH (eps_file ${eps_file_list})
-    GET_FILENAME_COMPONENT(image_name ${eps_file} NAME_WE)
-    IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.pdf)
-      # A pdf file already exists.  No need to convert.
-    ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.pdf)
-      IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.png)
-        # A png file already exists.  No need to convert.
-      ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.png)
-        SET(pdf_file ${CMAKE_CURRENT_BINARY_DIR}/${dir}/${image_name}.pdf)
-        ADD_CUSTOM_COMMAND(OUTPUT ${pdf_file}
-          COMMAND ${IMAGEMAGICK_CONVERT}
-          ARGS ${eps_file} ${pdf_file}
-          DEPENDS ${eps_file}
-          COMMENT "pdf image"
-          )
-        SET(OUT_PDF_FILES ${OUT_PDF_FILES} ${pdf_file})
-      ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.png)
-    ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.pdf)
-    SET(eps_out_file ${CMAKE_CURRENT_BINARY_DIR}/${dir}/${image_name}.eps)
-    ADD_CUSTOM_COMMAND(OUTPUT ${eps_out_file}
-      COMMAND ${CMAKE_COMMAND}
-      ARGS -E copy ${eps_file} ${eps_out_file}
-      DEPENDS ${eps_file}
-      COMMENT "postscript image"
-      )
-    SET(OUT_EPS_FILES ${OUT_EPS_FILES} ${eps_out_file})
-  ENDFOREACH (eps_file)
-
-  FILE(GLOB pdf_file_list ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*.pdf)
-  FOREACH (pdf_file ${pdf_file_list})
-    GET_FILENAME_COMPONENT(image_name ${pdf_file} NAME_WE)
-    SET(pdf_out_file ${CMAKE_CURRENT_BINARY_DIR}/${dir}/${image_name}.pdf)
-    ADD_CUSTOM_COMMAND(OUTPUT ${pdf_out_file}
-      COMMAND ${CMAKE_COMMAND}
-      ARGS -E copy ${pdf_file} ${pdf_out_file}
-      DEPENDS ${pdf_file}
-      COMMENT "pdf image"
-      )
-    SET(OUT_PDF_FILES ${OUT_PDF_FILES} ${pdf_out_file})
-    IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.eps)
-      # An eps file already exists.  No need to convert
-    ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.eps)
-      SET(eps_file ${CMAKE_CURRENT_BINARY_DIR}/${dir}/${image_name}.eps)
-      ADD_CUSTOM_COMMAND(OUTPUT ${eps_file}
+    # If we still need to convert, do it.
+    IF (do_convert)
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${output_file}
         COMMAND ${IMAGEMAGICK_CONVERT}
-        ARGS ${pdf_file} ${eps_file}
-        DEPENDS ${pdf_file}
-        COMMENT "postscript image"
+        ARGS ${input_dir}/${input_file} ${convert_flags}
+          ${output_dir}/${output_file}
+        DEPENDS ${input_dir}/${input_file}
         )
-      SET(OUT_EPS_FILES ${OUT_EPS_FILES} ${eps_file})
-    ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/${image_name}.eps)
-  ENDFOREACH (pdf_file)
+      SET(${output_files} ${${output_files}} ${output_dir}/${output_file})
+    ENDIF (do_convert)
+  ENDIF (is_type)
+ENDMACRO(LATEX_CONVERT_IMAGE)
 
-  ADD_CUSTOM_TARGET(latex_images_ps
-    ${CMAKE_COMMAND} -E echo "Building image files for ps documents."
-    DEPENDS ${OUT_EPS_FILES}
-    )
-  ADD_CUSTOM_TARGET(latex_images_pdf
-    DEPENDS ${OUT_PNG_FILES} ${OUT_PDF_FILES})
+# Adds custom commands to process the given files for dvi and pdf builds.
+# Adds the output files to the given variables (does not replace).
+MACRO(LATEX_PROCESS_IMAGES dvi_outputs pdf_outputs)
+  LATEX_GET_OUTPUT_PATH(output_dir)
+  FOREACH(file ${ARGN})
+    IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+      GET_FILENAME_COMPONENT(extension "${file}" EXT)
+      SET(convert_flags)
+
+      # Check to see if we need to downsample the image.
+      LATEX_LIST_CONTAINS(is_raster extension
+        ${LATEX_DVI_RASTER_IMAGE_EXTENSIONS}
+        ${LATEX_PDF_RASTER_IMAGE_EXTENSIONS})
+      IF (LATEX_SMALL_IMAGES)
+        IF (is_raster)
+          SET(convert_flags -resize ${LATEX_RASTER_SCALE}%)
+        ENDIF (is_raster)
+      ENDIF (LATEX_SMALL_IMAGES)
+
+      # Make sure the output directory exists.
+      GET_FILENAME_COMPONENT(path "${output_dir}/${file}" PATH)
+      MAKE_DIRECTORY("${path}")
+
+      # Do conversions for dvi.
+      LATEX_CONVERT_IMAGE(${dvi_outputs} "${file}" .eps "${convert_flags}"
+        "${LATEX_DVI_IMAGE_EXTENSIONS}" "${ARGN}")
+
+      # Do conversions for pdf.
+      IF (is_raster)
+        LATEX_CONVERT_IMAGE(${pdf_outputs} "${file}" .png "${convert_flags}"
+          "${LATEX_PDF_IMAGE_EXTENSIONS}" "${ARGN}")
+      ELSE (is_raster)
+        LATEX_CONVERT_IMAGE(${pdf_outputs} "${file}" .pdf "${convert_flags}"
+          "${LATEX_PDF_IMAGE_EXTENSIONS}" "${ARGN}")
+      ENDIF (is_raster)
+    ELSE (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+      MESSAGE("Could not find file \"${CMAKE_CURRENT_SOURCE_DIR}/${file}\"")
+    ENDIF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+  ENDFOREACH(file)
+ENDMACRO(LATEX_PROCESS_IMAGES)
+
+MACRO(ADD_LATEX_IMAGES)
+  MESSAGE("The ADD_LATEX_IMAGES macro is deprecated.  Image directories are specified with LATEX_ADD_DOCUMENT.")
 ENDMACRO(ADD_LATEX_IMAGES)
 
 
@@ -279,15 +335,6 @@ MACRO(LATEX_COPY_GLOBBED_FILES pattern dest)
     CONFIGURE_FILE(${in_file} ${dest}/${out_file} COPYONLY)
   ENDFOREACH(in_file)
 ENDMACRO(LATEX_COPY_GLOBBED_FILES)
-
-MACRO(LATEX_LIST_CONTAINS var value)
-  SET(${var})
-  FOREACH (value2 ${ARGN})
-    IF (${value} STREQUAL ${value2})
-      SET(${var} TRUE)
-    ENDIF (${value} STREQUAL ${value2})
-  ENDFOREACH (value2)
-ENDMACRO(LATEX_LIST_CONTAINS)
 
 MACRO(LATEX_PARSE_ARGUMENTS prefix arg_names option_names)
   SET(DEFAULT_ARGS)
@@ -320,7 +367,7 @@ ENDMACRO(LATEX_PARSE_ARGUMENTS)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file> [<image_dir>]\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [DEFAULT_PDF])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [DEFAULT_PDF])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -330,7 +377,7 @@ ENDMACRO(LATEX_USAGE command message)
 MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
-    "BIBFILES;INPUTS;CONFIGURE"
+    "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE"
     "USE_INDEX;DEFAULT_PDF"
     ${ARGN}
     )
@@ -344,99 +391,109 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
     LATEX_USAGE(${command} "No tex file target given to ${command}.")
   ENDIF (LATEX_DEFAULT_ARGS)
 
-  # The second argument is the (optional) image dir.
   IF (LATEX_DEFAULT_ARGS)
-    LATEX_CAR(LATEX_IMAGE_DIR ${LATEX_DEFAULT_ARGS})
-    LATEX_CDR(LATEX_DEFAULT_ARGS ${LATEX_DEFAULT_ARGS})
-    IF ("${LATEX_IMAGE_DIR}" STREQUAL NONE)
-      # Backward compatibility
-      SET(LATEX_IMAGE_DIR)
-    ENDIF ("${LATEX_IMAGE_DIR}" STREQUAL NONE)
-  ENDIF (LATEX_DEFAULT_ARGS)
-
-  # Old versions of UseLATEX.cmake had a bibtex file as the third argument.
-  IF (LATEX_DEFAULT_ARGS)
-    IF ("${LATEX_DEFAULT_ARGS}" STREQUAL NONE)
-      # Backward compatibility
-    ELSE ("${LATEX_DEFAULT_ARGS}" STREQUAL NONE)
-      SET(LATEX_BIBFILES ${LATEX_DEFAULT_ARGS})
-    ENDIF ("${LATEX_DEFAULT_ARGS}" STREQUAL NONE)
+    LATEX_USAGE(${command} "Invalid or depricated arguments: ${LATEX_DEFAULT_ARGS}")
   ENDIF (LATEX_DEFAULT_ARGS)
 ENDMACRO(PARSE_ADD_LATEX_ARGUMENTS)
 
 MACRO(ADD_LATEX_TARGETS)
+  LATEX_GET_OUTPUT_PATH(output_dir)
   PARSE_ADD_LATEX_ARGUMENTS(ADD_LATEX_TARGETS ${ARGV})
 
-  IF (LATEX_IMAGE_DIR)
-    IF (${LATEX_IMAGE_DIR} MATCHES ^[.]?$)
-      # Do not need to do anything, targets should already be made.
-    ELSE (${LATEX_IMAGE_DIR} MATCHES ^[.]?$)
-      ADD_CUSTOM_TARGET(latex_images_ps
-        ${CMAKE_COMMAND} -E chdir ${LATEX_IMAGE_DIR} ${CMAKE_MAKE_PROGRAM} latex_images_ps)
-      ADD_CUSTOM_TARGET(latex_images_pdf
-        ${CMAKE_COMMAND} -E chdir ${LATEX_IMAGE_DIR} ${CMAKE_MAKE_PROGRAM} latex_images_pdf)
-    ENDIF (${LATEX_IMAGE_DIR} MATCHES ^[.]?$)
-  ELSE (LATEX_IMAGE_DIR)
-    # No image directory.  Fake image targets.
-    ADD_CUSTOM_TARGET(latex_images_ps)
-    ADD_CUSTOM_TARGET(latex_images_pdf)
-  ENDIF (LATEX_IMAGE_DIR)
+  # For each directory in LATEX_IMAGE_DIRS, glob all the image files and
+  # place them in LATEX_IMAGES.
+  FOREACH(dir ${LATEX_IMAGE_DIRS})
+    FOREACH(extension ${LATEX_IMAGE_EXTENSIONS})
+      FILE(GLOB files ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*${extension})
+      FOREACH(file ${files})
+        GET_FILENAME_COMPONENT(filename ${file} NAME)
+        SET(LATEX_IMAGES ${LATEX_IMAGES} ${dir}/${filename})
+      ENDFOREACH(file)
+    ENDFOREACH(extension)
+  ENDFOREACH(dir)
+
+  SET(dvi_images)
+  SET(pdf_images)
+  LATEX_PROCESS_IMAGES(dvi_images pdf_images ${LATEX_IMAGES})
 
   SET(make_dvi_command
+    ${CMAKE_COMMAND} -E chdir ${output_dir}
     ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
-  SET(make_dvi_depends ${LATEX_TARGET}.tex ${LATEX_INPUTS})
   SET(make_pdf_command
+    ${CMAKE_COMMAND} -E chdir ${output_dir}
     ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
-  SET(make_pdf_depends ${LATEX_TARGET}.tex ${LATEX_INPUTS})
+
+  SET(make_dvi_depends ${dvi_images})
+  SET(make_pdf_depends ${pdf_images})
+  FOREACH(input ${LATEX_TARGET}.tex ${LATEX_INPUTS})
+    SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
+    SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
+  ENDFOREACH(input)
 
   IF (LATEX_BIBFILES)
     SET(make_dvi_command ${make_dvi_command}
-      COMMAND ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
     SET(make_pdf_command ${make_pdf_command}
-      COMMAND ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
-    SET(make_dvi_depends ${make_dvi_depends} ${LATEX_BIBFILES})
-    SET(make_pdf_depends ${make_pdf_depends} ${LATEX_BIBFILES})
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+    FOREACH (bibfile ${LATEX_BIBFILES})
+      SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${bibfile})
+      SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${bibfile})
+    ENDFOREACH (bibfile ${LATEX_BIBFILES})
   ENDIF (LATEX_BIBFILES)
 
   IF (LATEX_USE_INDEX)
     SET(make_dvi_command ${make_dvi_command}
-      COMMAND ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
-      COMMAND ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
     SET(make_pdf_command ${make_pdf_command}
-      COMMAND ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
-      COMMAND ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
   ENDIF (LATEX_USE_INDEX)
 
   SET(make_dvi_command ${make_dvi_command}
-    COMMAND ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
-    COMMAND ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+    COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+    COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
   SET(make_pdf_command ${make_pdf_command}
-    COMMAND ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
-    COMMAND ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+    COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+    COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
 
   IF (LATEX_DEFAULT_PDF)
-    ADD_CUSTOM_TARGET(dvi ${make_dvi_command})
+    ADD_CUSTOM_TARGET(dvi ${make_dvi_command}
+      DEPENDS ${make_dvi_depends})
   ELSE (LATEX_DEFAULT_PDF)
-    ADD_CUSTOM_TARGET(dvi ALL ${make_dvi_command})
+    ADD_CUSTOM_TARGET(dvi ALL ${make_dvi_command}
+      DEPENDS ${make_dvi_depends})
   ENDIF (LATEX_DEFAULT_PDF)
-  ADD_DEPENDENCIES(dvi ${make_dvi_depends} latex_images_ps)
 
   IF (PDFLATEX_COMPILER)
     IF (LATEX_DEFAULT_PDF)
-      ADD_CUSTOM_TARGET(pdf ALL ${make_pdf_command})
+      ADD_CUSTOM_TARGET(pdf ALL ${make_pdf_command}
+        DEPENDS ${make_pdf_depends})
     ELSE (LATEX_DEFAULT_PDF)
-      ADD_CUSTOM_TARGET(pdf ${make_pdf_command})
+      ADD_CUSTOM_TARGET(pdf ${make_pdf_command}
+        DEPENDS ${make_pdf_depends})
     ENDIF (LATEX_DEFAULT_PDF)
-    ADD_DEPENDENCIES(pdf ${make_pdf_depends} latex_images_pdf)
   ENDIF (PDFLATEX_COMPILER)
 
   IF (DVIPS_CONVERTER)
     ADD_CUSTOM_TARGET(ps
+      ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
       )
     ADD_DEPENDENCIES(ps dvi)
     IF (PS2PDF_CONVERTER)
       ADD_CUSTOM_TARGET(safepdf
+        ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
         )
       ADD_DEPENDENCIES(safepdf ps)
@@ -445,57 +502,68 @@ MACRO(ADD_LATEX_TARGETS)
 
   IF (LATEX2HTML_CONVERTER)
     ADD_CUSTOM_TARGET(html
+      ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_TARGET}.tex
       )
     ADD_DEPENDENCIES(html ${LATEX_TARGET}.tex ${LATEX_INPUTS})
   ENDIF (LATEX2HTML_CONVERTER)
 
   ADD_CUSTOM_TARGET(auxclean
-    ${CMAKE_COMMAND} -E remove ${LATEX_TARGET}.aux ${LATEX_TARGET}.idx ${LATEX_TARGET}.ind
+    ${CMAKE_COMMAND} -E remove ${output_dir}/${LATEX_TARGET}.aux ${output_dir}/${LATEX_TARGET}.idx ${output_dir}/${LATEX_TARGET}.ind
     )
 ENDMACRO(ADD_LATEX_TARGETS)
 
 MACRO(LATEX_COPY_TEX_FILE file)
+  LATEX_GET_OUTPUT_PATH(output_dir)
+
   GET_FILENAME_COMPONENT(file_we ${file} NAME_WE)
   LATEX_LIST_CONTAINS(use_config1 ${file_we} ${LATEX_CONFIGURE})
   LATEX_LIST_CONTAINS(use_config2 ${file_we}.tex ${LATEX_CONFIGURE})
   IF (use_config1 OR use_config2)
-    SET(latex_config_flags @ONLY)
+    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
+      ${output_dir}/${file_we}.tex
+      @ONLY
+      )
+    ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file_we}.tex
+      COMMAND ${CMAKE_COMMAND}
+      ARGS ${CMAKE_BINARY_DIR}
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
+      )
   ELSE (use_config1 OR use_config2)
-    SET(latex_config_flags COPYONLY)
+    ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file_we}.tex
+      COMMAND ${CMAKE_COMMAND}
+      ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex ${output_dir}/${file_we}.tex
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
+      )
   ENDIF (use_config1 OR use_config2)
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
-    ${file_we}.tex
-    ${latex_config_flags}
-    )
-  ADD_CUSTOM_TARGET(${file_we}.tex
-    ${CMAKE_COMMAND} .
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
-    )
+
 ENDMACRO(LATEX_COPY_TEX_FILE)
 
 MACRO(ADD_LATEX_DOCUMENT)
-  PARSE_ADD_LATEX_ARGUMENTS(ADD_LATEX_DOCUMENT ${ARGV})
+  LATEX_GET_OUTPUT_PATH(output_dir)
+  IF (output_dir)
+    PARSE_ADD_LATEX_ARGUMENTS(ADD_LATEX_DOCUMENT ${ARGV})
 
-  LATEX_COPY_TEX_FILE(${LATEX_TARGET})
+    LATEX_COPY_TEX_FILE(${LATEX_TARGET})
 
-  FOREACH (bib_file ${LATEX_BIBFILES})
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
-      ${bib_file}
-      COPYONLY)
-    ADD_CUSTOM_TARGET(${bib_file}
-      ${CMAKE_COMMAND} .
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
-      )
-  ENDFOREACH (bib_file)
+    FOREACH (bib_file ${LATEX_BIBFILES})
+      CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
+        ${output_dir}/${bib_file}
+        COPYONLY)
+      ADD_CUSTOM_TARGET(${output_dir}/${bib_file}
+        ${CMAKE_COMMAND} .
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
+        )
+    ENDFOREACH (bib_file)
 
-  FOREACH (input ${LATEX_INPUTS})
-    LATEX_COPY_TEX_FILE(${input})
-  ENDFOREACH(input)
+    FOREACH (input ${LATEX_INPUTS})
+      LATEX_COPY_TEX_FILE(${input})
+    ENDFOREACH(input)
 
-  LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.cls .)
-  LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.bst .)
-  LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.clo .)
+    LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.cls ${output_dir})
+    LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.bst ${output_dir})
+    LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.clo ${output_dir})
 
-  ADD_LATEX_TARGETS(${ARGV})
+    ADD_LATEX_TARGETS(${ARGV})
+  ENDIF (output_dir)
 ENDMACRO(ADD_LATEX_DOCUMENT)
