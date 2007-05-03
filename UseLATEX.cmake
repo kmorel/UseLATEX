@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.3.0
+# Version: 1.4.0
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -18,7 +18,7 @@
 #                       [IMAGE_DIRS] <image_directories>
 #                       [IMAGES] <image_files>
 #                       [CONFIGURE] <tex_files>
-#                       [USE_INDEX] [DEFAULT_PDF])
+#                       [USE_INDEX] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
@@ -46,8 +46,11 @@
 #               auxclean: Deletes <name>.aux.  This is sometimes necessary
 #                       if a LaTeX error occurs and writes a bad aux file.
 #
-#       If the argument USE_INDEX is given, then commands to build an index
-#       are made.
+#       If the argument MANGLE_TARGET_NAMES is given, then each of the
+#       target names above will be mangled with the <tex_file> name.  This
+#       is to make the targets unique if ADD_LATEX_DOCUMENT is called for
+#       multiple documents.  If the argument USE_INDEX is given, then
+#       commands to build an index are made.
 #
 # ADD_LATEX_TARGETS(<tex_file>
 #                       [BIBFILES <bib_files>]
@@ -55,7 +58,7 @@
 #                       [IMAGE_DIRS] <image_directories>
 #                       [IMAGES] <image_files>
 #                       [CONFIGURE] <tex_files>
-#                       [USE_INDEX] [DEFAULT_PDF])
+#                       [USE_INDEX] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
 #       Like ADD_LATEX_DOCUMENT, except no files are configured or copied.
 #       The files are assumed to already be added to the output directory.
 #       This varient is helpful if one set of latex files makes different
@@ -63,6 +66,11 @@
 #       separately from the entire document.
 #
 # History:
+#
+# 1.4.0 Added a MANGLE_TARGET_NAMES option that will mangle the target names.
+#
+#       Fixed problem with copying bib files that became apparent with
+#       CMake 2.4.
 #
 # 1.3.0 Added a LATEX_OUTPUT_PATH variable that allows you or the user to
 #       specify where the built latex documents to go.  This is especially
@@ -367,7 +375,7 @@ ENDMACRO(LATEX_PARSE_ARGUMENTS)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [DEFAULT_PDF])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -378,7 +386,7 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE"
-    "USE_INDEX;DEFAULT_PDF"
+    "USE_INDEX;DEFAULT_PDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -399,6 +407,23 @@ ENDMACRO(PARSE_ADD_LATEX_ARGUMENTS)
 MACRO(ADD_LATEX_TARGETS)
   LATEX_GET_OUTPUT_PATH(output_dir)
   PARSE_ADD_LATEX_ARGUMENTS(ADD_LATEX_TARGETS ${ARGV})
+
+  # Set up target names.
+  IF (LATEX_MANGLE_TARGET_NAMES)
+    SET(dvi_target      ${LATEX_TARGET}_dvi)
+    SET(pdf_target      ${LATEX_TARGET}_pdf)
+    SET(ps_target       ${LATEX_TARGET}_ps)
+    SET(safepdf_target  ${LATEX_TARGET}_safepdf)
+    SET(html_target     ${LATEX_TARGET}_html)
+    SET(auxclean_target ${LATEX_TARGET}_auxclean)
+  ELSE (LATEX_MANGLE_TARGET_NAMES)
+    SET(dvi_target      dvi)
+    SET(pdf_target      pdf)
+    SET(ps_target       ps)
+    SET(safepdf_target  safepdf)
+    SET(html_target     html)
+    SET(auxclean_target auxclean)
+  ENDIF (LATEX_MANGLE_TARGET_NAMES)
 
   # For each directory in LATEX_IMAGE_DIRS, glob all the image files and
   # place them in LATEX_IMAGES.
@@ -468,47 +493,47 @@ MACRO(ADD_LATEX_TARGETS)
     ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
 
   IF (LATEX_DEFAULT_PDF)
-    ADD_CUSTOM_TARGET(dvi ${make_dvi_command}
+    ADD_CUSTOM_TARGET(${dvi_target} ${make_dvi_command}
       DEPENDS ${make_dvi_depends})
   ELSE (LATEX_DEFAULT_PDF)
-    ADD_CUSTOM_TARGET(dvi ALL ${make_dvi_command}
+    ADD_CUSTOM_TARGET(${dvi_target} ALL ${make_dvi_command}
       DEPENDS ${make_dvi_depends})
   ENDIF (LATEX_DEFAULT_PDF)
 
   IF (PDFLATEX_COMPILER)
     IF (LATEX_DEFAULT_PDF)
-      ADD_CUSTOM_TARGET(pdf ALL ${make_pdf_command}
+      ADD_CUSTOM_TARGET(${pdf_target} ALL ${make_pdf_command}
         DEPENDS ${make_pdf_depends})
     ELSE (LATEX_DEFAULT_PDF)
-      ADD_CUSTOM_TARGET(pdf ${make_pdf_command}
+      ADD_CUSTOM_TARGET(${pdf_target} ${make_pdf_command}
         DEPENDS ${make_pdf_depends})
     ENDIF (LATEX_DEFAULT_PDF)
   ENDIF (PDFLATEX_COMPILER)
 
   IF (DVIPS_CONVERTER)
-    ADD_CUSTOM_TARGET(ps
+    ADD_CUSTOM_TARGET(${ps_target}
       ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
       )
-    ADD_DEPENDENCIES(ps dvi)
+    ADD_DEPENDENCIES(${ps_target} ${dvi_target})
     IF (PS2PDF_CONVERTER)
-      ADD_CUSTOM_TARGET(safepdf
+      ADD_CUSTOM_TARGET(${safepdf_target}
         ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
         )
-      ADD_DEPENDENCIES(safepdf ps)
+      ADD_DEPENDENCIES(${safepdf_target} ${ps_target})
     ENDIF (PS2PDF_CONVERTER)
   ENDIF (DVIPS_CONVERTER)
 
   IF (LATEX2HTML_CONVERTER)
-    ADD_CUSTOM_TARGET(html
+    ADD_CUSTOM_TARGET(${html_target}
       ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_TARGET}.tex
       )
-    ADD_DEPENDENCIES(html ${LATEX_TARGET}.tex ${LATEX_INPUTS})
+    ADD_DEPENDENCIES(${html_target} ${LATEX_TARGET}.tex ${LATEX_INPUTS})
   ENDIF (LATEX2HTML_CONVERTER)
 
-  ADD_CUSTOM_TARGET(auxclean
+  ADD_CUSTOM_TARGET(${auxclean_target}
     ${CMAKE_COMMAND} -E remove ${output_dir}/${LATEX_TARGET}.aux ${output_dir}/${LATEX_TARGET}.idx ${output_dir}/${LATEX_TARGET}.ind
     )
 ENDMACRO(ADD_LATEX_TARGETS)
@@ -550,8 +575,9 @@ MACRO(ADD_LATEX_DOCUMENT)
       CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
         ${output_dir}/${bib_file}
         COPYONLY)
-      ADD_CUSTOM_TARGET(${output_dir}/${bib_file}
-        ${CMAKE_COMMAND} .
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${bib_file}
+        COMMAND ${CMAKE_COMMAND}
+        ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${bib_file} ${output_dir}/${bib_file}
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
         )
     ENDFOREACH (bib_file)
