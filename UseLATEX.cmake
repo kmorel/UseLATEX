@@ -1,7 +1,7 @@
 #
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.1.1
+# Version: 1.2.0
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -20,15 +20,21 @@
 #
 # ADD_LATEX_DOCUMENT(<tex_file> [<image_dir>]
 #                       [BIBFILES <bib_files>] [INPUTS <input_tex_files>]
-#                       [USE_INDEX] [NO_CONFIGURE])
+#                       [CONFIGURE] <tex_files>
+#                       [USE_INDEX] [DEFAULT_PDF])
 #       Adds targets that compile <tex_file>.  It is assumed that
 #       ADD_LATEX_IMAGES has been called in <image_dir>.  (Note that the
-#       dir parameter is different for the two commands.)  <bib_files> are
-#       the bibliography files that are also copied to the output
-#       directory.  CONFIGURE_FILE (with @ONLY flag) is also run on
-#       <tex_file> and on all the <input_tex_files> unless the NO_CONFIGURE
-#       option is given.  Also copies any .cls .bst .clo files from the
-#       source directory to the binary directory.
+#       dir parameter is different for the two commands.)  The latex
+#       program is picky about where files are located, so all input files
+#       are copied from the source directory to the binary directory.  This
+#       includes the target tex file, any tex file listed with the INPUTS
+#       option, the bibliography files listed with the BIBFILES option, and
+#       any .cls, .bst, and .clo files found in the current source
+#       directory.  Any tex files also listed with the INPUTS option are
+#       also processed with the CMake CONFIGURE_FILE command (with the
+#       @ONLY flag.  Any file listed in INPUTS but not the target tex file
+#       or listed with INPUTS has no effect.
+#
 #       The following targets are made:
 #               dvi: Makes <name>.dvi
 #               pdf: Makes <name>.pdf using pdflatex.
@@ -40,6 +46,7 @@
 #               html: Makes <name>.html
 #               auxclean: Deletes <name>.aux.  This is sometimes necessary
 #                       if a LaTeX error occurs and writes a bad aux file.
+#
 #       If the argument USE_INDEX is given, then commands to build an index
 #       are made.
 #
@@ -53,6 +60,14 @@
 #       separately from the entire document.
 #
 # History:
+#
+# 1.2.0 Changed the configuration options yet again.  Removed the NO_CONFIGURE
+#       Replaced it with a CONFIGURE option that lists input files for which
+#       configure should be run.
+#
+#       The pdf target no longer depends on the dvi target.  This allows you
+#       to build latex documents that require pdflatex.  Also added an option
+#       to make the pdf target the default one.
 #
 # 1.1.1 Added the NO_CONFIGURE option.  The @ character can be used when
 #       specifying table column separators.  If two or more are used, then
@@ -305,7 +320,7 @@ ENDMACRO(LATEX_PARSE_ARGUMENTS)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file> [<image_dir>]\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [USE_INDEX] [NO_CONFIGURE])"
+    "${message}\nUsage: ${command}(<tex_file> [<image_dir>]\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [DEFAULT_PDF])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -313,8 +328,12 @@ ENDMACRO(LATEX_USAGE command message)
 # variables LATEX_TARGET, LATEX_IMAGE_DIR, LATEX_BIBFILES, and
 # LATEX_INPUTS.
 MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
-  LATEX_PARSE_ARGUMENTS(LATEX "BIBFILES;INPUTS" "USE_INDEX;NO_CONFIGURE"
-    ${ARGN})
+  LATEX_PARSE_ARGUMENTS(
+    LATEX
+    "BIBFILES;INPUTS;CONFIGURE"
+    "USE_INDEX;DEFAULT_PDF"
+    ${ARGN}
+    )
 
   # The first argument is the target latex file.
   IF (LATEX_DEFAULT_ARGS)
@@ -363,36 +382,52 @@ MACRO(ADD_LATEX_TARGETS)
     ADD_CUSTOM_TARGET(latex_images_pdf)
   ENDIF (LATEX_IMAGE_DIR)
 
-  SET(make_dvi_command ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
-  SET(make_dvi_depends ${LATEX_TARGET}.tex ${LATEX_INPUTS} latex_images_ps)
+  SET(make_dvi_command
+    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+  SET(make_dvi_depends ${LATEX_TARGET}.tex ${LATEX_INPUTS})
+  SET(make_pdf_command
+    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+  SET(make_pdf_depends ${LATEX_TARGET}.tex ${LATEX_INPUTS})
 
   IF (LATEX_BIBFILES)
     SET(make_dvi_command ${make_dvi_command}
       COMMAND ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+    SET(make_pdf_command ${make_pdf_command}
+      COMMAND ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
     SET(make_dvi_depends ${make_dvi_depends} ${LATEX_BIBFILES})
+    SET(make_pdf_depends ${make_pdf_depends} ${LATEX_BIBFILES})
   ENDIF (LATEX_BIBFILES)
 
   IF (LATEX_USE_INDEX)
     SET(make_dvi_command ${make_dvi_command}
       COMMAND ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
       COMMAND ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
+    SET(make_pdf_command ${make_pdf_command}
+      COMMAND ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+      COMMAND ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
   ENDIF (LATEX_USE_INDEX)
 
   SET(make_dvi_command ${make_dvi_command}
     COMMAND ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
-    COMMAND ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
     COMMAND ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+  SET(make_pdf_command ${make_pdf_command}
+    COMMAND ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+    COMMAND ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
 
-  ADD_CUSTOM_TARGET(dvi ALL
-    ${make_dvi_command}
-    )
-  ADD_DEPENDENCIES(dvi ${make_dvi_depends})
+  IF (LATEX_DEFAULT_PDF)
+    ADD_CUSTOM_TARGET(dvi ${make_dvi_command})
+  ELSE (LATEX_DEFAULT_PDF)
+    ADD_CUSTOM_TARGET(dvi ALL ${make_dvi_command})
+  ENDIF (LATEX_DEFAULT_PDF)
+  ADD_DEPENDENCIES(dvi ${make_dvi_depends} latex_images_ps)
 
   IF (PDFLATEX_COMPILER)
-    ADD_CUSTOM_TARGET(pdf
-      ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
-      )
-    ADD_DEPENDENCIES(pdf dvi latex_images_pdf)
+    IF (LATEX_DEFAULT_PDF)
+      ADD_CUSTOM_TARGET(pdf ALL ${make_pdf_command})
+    ELSE (LATEX_DEFAULT_PDF)
+      ADD_CUSTOM_TARGET(pdf ${make_pdf_command})
+    ENDIF (LATEX_DEFAULT_PDF)
+    ADD_DEPENDENCIES(pdf ${make_pdf_depends} latex_images_pdf)
   ENDIF (PDFLATEX_COMPILER)
 
   IF (DVIPS_CONVERTER)
@@ -420,21 +455,29 @@ MACRO(ADD_LATEX_TARGETS)
     )
 ENDMACRO(ADD_LATEX_TARGETS)
 
+MACRO(LATEX_COPY_TEX_FILE file)
+  GET_FILENAME_COMPONENT(file_we ${file} NAME_WE)
+  LATEX_LIST_CONTAINS(use_config1 ${file_we} ${LATEX_CONFIGURE})
+  LATEX_LIST_CONTAINS(use_config2 ${file_we}.tex ${LATEX_CONFIGURE})
+  IF (use_config1 OR use_config2)
+    SET(latex_config_flags @ONLY)
+  ELSE (use_config1 OR use_config2)
+    SET(latex_config_flags COPYONLY)
+  ENDIF (use_config1 OR use_config2)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
+    ${file_we}.tex
+    ${latex_config_flags}
+    )
+  ADD_CUSTOM_TARGET(${file_we}.tex
+    ${CMAKE_COMMAND} .
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
+    )
+ENDMACRO(LATEX_COPY_TEX_FILE)
+
 MACRO(ADD_LATEX_DOCUMENT)
   PARSE_ADD_LATEX_ARGUMENTS(ADD_LATEX_DOCUMENT ${ARGV})
 
-  IF (LATEX_NO_CONFIGURE)
-    SET(LATEX_CONFIGURE_FLAGS COPYONLY)
-  ELSE (LATEX_NO_CONFIGURE)
-    SET(LATEX_CONFIGURE_FLAGS @ONLY)
-  ENDIF (LATEX_NO_CONFIGURE)
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${LATEX_TARGET}.tex
-    ${LATEX_TARGET}.tex
-    ${LATEX_CONFIGURE_FLAGS})
-  ADD_CUSTOM_TARGET(${LATEX_TARGET}.tex
-    ${CMAKE_COMMAND} .
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${LATEX_TARGET}.tex
-    )
+  LATEX_COPY_TEX_FILE(${LATEX_TARGET})
 
   FOREACH (bib_file ${LATEX_BIBFILES})
     CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
@@ -447,12 +490,7 @@ MACRO(ADD_LATEX_DOCUMENT)
   ENDFOREACH (bib_file)
 
   FOREACH (input ${LATEX_INPUTS})
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${input} ${input}
-      ${LATEX_CONFIGURE_FLAGS})
-    ADD_CUSTOM_TARGET(${input}
-      ${CMAKE_COMMAND} .
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${input}
-      )
+    LATEX_COPY_TEX_FILE(${input})
   ENDFOREACH(input)
 
   LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.cls .)
