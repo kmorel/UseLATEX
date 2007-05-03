@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.4.1
+# Version: 1.5.0
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -52,20 +52,23 @@
 #       multiple documents.  If the argument USE_INDEX is given, then
 #       commands to build an index are made.
 #
-# ADD_LATEX_TARGETS(<tex_file>
-#                       [BIBFILES <bib_files>]
-#                       [INPUTS <input_tex_files>]
-#                       [IMAGE_DIRS] <image_directories>
-#                       [IMAGES] <image_files>
-#                       [CONFIGURE] <tex_files>
-#                       [USE_INDEX] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
-#       Like ADD_LATEX_DOCUMENT, except no files are configured or copied.
-#       The files are assumed to already be added to the output directory.
-#       This varient is helpful if one set of latex files makes different
-#       varients of documents.  For example, with building chapters
-#       separately from the entire document.
-#
 # History:
+#
+# 1.5.0 Allow any type of file in the INPUTS lists, not just tex file
+#       (suggested by Eric Noulard).  As a consequence, the ability to
+#       specify tex files without the .tex extension is removed.  The removed
+#       function is of dubious value anyway.
+#
+#	When copying input files, skip over any file that exists in the
+#	binary directory but does not exist in the source directory with the
+#	assumption that these files were added by some other mechanism.  I
+#	find this useful when creating large documents with multiple
+#	chapters that I want to build separately (for speed) as I work on
+#	them.  I use the same boilerplate as the starting point for all
+#	and just copy it with different configurations.  This was what the
+#	separate ADD_LATEX_DOCUMENT method was supposed to originally be for.
+#	Since its external use is pretty much deprecated, I removed that
+#	documentation.
 #
 # 1.4.1 Copy .sty files along with the other class and package files.
 #
@@ -394,9 +397,9 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
 
   # The first argument is the target latex file.
   IF (LATEX_DEFAULT_ARGS)
-    LATEX_CAR(target ${LATEX_DEFAULT_ARGS})
+    LATEX_CAR(LATEX_MAIN_INPUT ${LATEX_DEFAULT_ARGS})
     LATEX_CDR(LATEX_DEFAULT_ARGS ${LATEX_DEFAULT_ARGS})
-    GET_FILENAME_COMPONENT(LATEX_TARGET ${target} NAME_WE)
+    GET_FILENAME_COMPONENT(LATEX_TARGET ${LATEX_MAIN_INPUT} NAME_WE)
   ELSE (LATEX_DEFAULT_ARGS)
     LATEX_USAGE(${command} "No tex file target given to ${command}.")
   ENDIF (LATEX_DEFAULT_ARGS)
@@ -445,14 +448,14 @@ MACRO(ADD_LATEX_TARGETS)
 
   SET(make_dvi_command
     ${CMAKE_COMMAND} -E chdir ${output_dir}
-    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT})
   SET(make_pdf_command
     ${CMAKE_COMMAND} -E chdir ${output_dir}
-    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT})
 
   SET(make_dvi_depends ${dvi_images})
   SET(make_pdf_depends ${pdf_images})
-  FOREACH(input ${LATEX_TARGET}.tex ${LATEX_INPUTS})
+  FOREACH(input ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
     SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
     SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
   ENDFOREACH(input)
@@ -473,26 +476,26 @@ MACRO(ADD_LATEX_TARGETS)
   IF (LATEX_USE_INDEX)
     SET(make_dvi_command ${make_dvi_command}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+      ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
     SET(make_pdf_command ${make_pdf_command}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+      ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
   ENDIF (LATEX_USE_INDEX)
 
   SET(make_dvi_command ${make_dvi_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT})
   SET(make_pdf_command ${make_pdf_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex
+    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_TARGET}.tex)
+    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT})
 
   IF (LATEX_DEFAULT_PDF)
     ADD_CUSTOM_TARGET(${dvi_target} ${make_dvi_command}
@@ -530,9 +533,9 @@ MACRO(ADD_LATEX_TARGETS)
   IF (LATEX2HTML_CONVERTER)
     ADD_CUSTOM_TARGET(${html_target}
       ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_TARGET}.tex
+      ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
       )
-    ADD_DEPENDENCIES(${html_target} ${LATEX_TARGET}.tex ${LATEX_INPUTS})
+    ADD_DEPENDENCIES(${html_target} ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
   ENDIF (LATEX2HTML_CONVERTER)
 
   ADD_CUSTOM_TARGET(${auxclean_target}
@@ -540,38 +543,48 @@ MACRO(ADD_LATEX_TARGETS)
     )
 ENDMACRO(ADD_LATEX_TARGETS)
 
-MACRO(LATEX_COPY_TEX_FILE file)
+MACRO(LATEX_COPY_INPUT_FILE file)
   LATEX_GET_OUTPUT_PATH(output_dir)
 
-  GET_FILENAME_COMPONENT(file_we ${file} NAME_WE)
-  LATEX_LIST_CONTAINS(use_config1 ${file_we} ${LATEX_CONFIGURE})
-  LATEX_LIST_CONTAINS(use_config2 ${file_we}.tex ${LATEX_CONFIGURE})
-  IF (use_config1 OR use_config2)
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
-      ${output_dir}/${file_we}.tex
-      @ONLY
-      )
-    ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file_we}.tex
-      COMMAND ${CMAKE_COMMAND}
-      ARGS ${CMAKE_BINARY_DIR}
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
-      )
-  ELSE (use_config1 OR use_config2)
-    ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file_we}.tex
-      COMMAND ${CMAKE_COMMAND}
-      ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex ${output_dir}/${file_we}.tex
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file_we}.tex
-      )
-  ENDIF (use_config1 OR use_config2)
+  IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+    GET_FILENAME_COMPONENT(path ${file} PATH)
+    FILE(MAKE_DIRECTORY ${output_dir}/${path})
 
-ENDMACRO(LATEX_COPY_TEX_FILE)
+    LATEX_LIST_CONTAINS(use_config ${file} ${LATEX_CONFIGURE})
+    IF (use_config)
+      CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file}
+	${output_dir}/${file}
+	@ONLY
+	)
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
+	COMMAND ${CMAKE_COMMAND}
+	ARGS ${CMAKE_BINARY_DIR}
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
+	)
+    ELSE (use_config)
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
+	COMMAND ${CMAKE_COMMAND}
+	ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${output_dir}/${file}
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
+	)
+    ENDIF (use_config)
+  ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+    IF (EXISTS ${output_dir}/${file})
+      # Special case: output exists but input does not.  Assume that it was
+      # created elsewhere and skip the input file copy.
+    ELSE (EXISTS ${output_dir}/${file})
+      MESSAGE("Could not find input file ${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+    ENDIF (EXISTS ${output_dir}/${file})
+  ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+
+ENDMACRO(LATEX_COPY_INPUT_FILE)
 
 MACRO(ADD_LATEX_DOCUMENT)
   LATEX_GET_OUTPUT_PATH(output_dir)
   IF (output_dir)
     PARSE_ADD_LATEX_ARGUMENTS(ADD_LATEX_DOCUMENT ${ARGV})
 
-    LATEX_COPY_TEX_FILE(${LATEX_TARGET})
+    LATEX_COPY_INPUT_FILE(${LATEX_MAIN_INPUT})
 
     FOREACH (bib_file ${LATEX_BIBFILES})
       CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
@@ -585,7 +598,7 @@ MACRO(ADD_LATEX_DOCUMENT)
     ENDFOREACH (bib_file)
 
     FOREACH (input ${LATEX_INPUTS})
-      LATEX_COPY_TEX_FILE(${input})
+      LATEX_COPY_INPUT_FILE(${input})
     ENDFOREACH(input)
 
     LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.cls ${output_dir})
