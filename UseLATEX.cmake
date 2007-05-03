@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.4.0
+# Version: 1.4.1
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -66,6 +66,8 @@
 #       separately from the entire document.
 #
 # History:
+#
+# 1.4.1 Copy .sty files along with the other class and package files.
 #
 # 1.4.0 Added a MANGLE_TARGET_NAMES option that will mangle the target names.
 #
@@ -589,6 +591,7 @@ MACRO(ADD_LATEX_DOCUMENT)
     LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.cls ${output_dir})
     LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.bst ${output_dir})
     LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.clo ${output_dir})
+    LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.sty ${output_dir})
 
     ADD_LATEX_TARGETS(${ARGV})
   ENDIF (output_dir)
