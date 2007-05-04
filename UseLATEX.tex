@@ -1,0 +1,505 @@
+% -*- latex -*-
+
+\documentclass{article}
+
+% This wonderful package allows hyphenation in tt fonts and hyphenation of
+% words with underscores in them.
+\usepackage[htt]{hyphenat}
+
+\usepackage{fancyvrb}
+\usepackage{color}
+\usepackage{xspace}
+
+\usepackage{hyperref}
+\hypersetup{pdftitle={UseLATEX.cmake: LaTeX Document Building Made Easy}}
+\hypersetup{pdfauthor={Kenneth Moreland}}
+
+% Simple commands that establish the font for various elements.
+\newcommand*{\textfile}[1]{\textsf{#1}}
+\newcommand*{\textprog}[1]{\textfile{#1}}
+\newcommand*{\textlatexpackage}[1]{\textsf{#1}}
+\newcommand*{\textcmake}[1]{\texttt{#1}}
+\newcommand*{\textcmakevar}[1]{\textcmake{#1}}
+\newcommand*{\textmaketarget}[1]{#1}
+\newcommand*{\textvar}[1]{\textit{#1}}
+\CustomVerbatimCommand{\textlatex}{Verb}{}
+
+% Simple commands that insert some standard text.
+\newcommand*{\UseLATEX}{\textfile{UseLATEX.cmake}\xspace}
+\newcommand*{\latex}{\LaTeX\xspace}
+\newcommand*{\bibtex}{\textsc{Bib}\TeX\xspace}
+\newcommand*{\miktex}{Mik\TeX\xspace}
+\newcommand*{\ald}{\textcmake{ADD\_LATEX\_DOCUMENT}\xspace}
+
+% Environments for listing CMake and other types of code.
+\definecolor{listingframecolor}{cmyk}{0,0,0,0.25}
+\CustomVerbatimEnvironment{CodeListing}{Verbatim}{
+  frame=single,
+  rulecolor=\color{listingframecolor},
+  framesep=6pt}
+\newcommand*{\includeCodeListing}[2][]{\VerbatimInput[
+  frame=single,
+  rulecolor=\color{listingframecolor},
+  framesep=4pt,#1]{#2}}
+
+\begin{document}
+
+  \sloppy
+
+  \title{UseLATEX.cmake: \latex Document Building Made Easy}
+  \author{Kenneth Moreland}
+  \maketitle
+
+  \tableofcontents
+
+  %-----------------------------------------------------------------------------
+
+  \section{Description}
+  \label{sec:Description}
+
+  Compiling \latex files into readable documents is actually a very
+  involved process. Although CMake comes with \textfile{FindLATEX.cmake},
+  it does nothing for you other than find the commands associated with
+  \latex. I like using CMake to build my \latex documents, but creating
+  targets to do it is actually a pain. Thus, I've compiled a bunch of
+  macros that help me create targets in CMake into a file I call
+  ``\UseLATEX.'' Here are some of the things \UseLATEX handles:
+
+  \begin{itemize}
+  \item Runs \latex multiple times to resolve links. 
+  \item Can run \textprog{bibtex} and \textprog{makeindex} to make
+    bibliographies and/or indexes.
+  \item Optionally runs configure on your \latex files to replace
+    \textcmake{@\textvar{VARIABLE}@} with the equivalent CMake variable.
+  \item Automatically finds png, jpeg, eps, and pdf files and converts them
+    to formats \textprog{latex} and \textprog{pdflatex} understand.
+  \end{itemize}
+
+  %-----------------------------------------------------------------------------
+
+  \section{Download}
+  \label{sec:Download}
+
+  \UseLATEX is currently posted to the CMake Wiki at
+  \begin{quote}
+    \href{http://public.kitware.com/Wiki/CMakeUserUseLATEX}{http://public.kitware.com/Wiki/CMakeUserUseLATEX}.
+  \end{quote}
+
+  %-----------------------------------------------------------------------------
+
+  \section{Usage}
+  \label{sec:Usage}
+
+  Using \UseLATEX is easy. For a basic \latex file, simply include the file
+  in your \textfile{CMakeLists.txt} and use the \ald command to make
+  targets to build your document. For an example document in the file
+  \textfile{MyDoc.tex}, you could establish a build with the following
+  simple \textfile{CMakeLists.txt}.
+
+  \begin{CodeListing}
+PROJECT(MyDoc NONE)
+
+INCLUDE(UseLATEX.cmake)
+ADD_LATEX_DOCUMENT(MyDoc.tex)
+  \end{CodeListing}
+
+  The \ald adds the following targets to create a readable document from
+  \textfile{MyDoc.tex}:
+
+  \begin{description}
+    \item[\textmaketarget{dvi}] Creates \textfile{MyDoc.dvi}. 
+    \item[\textmaketarget{pdf}] Creates \textfile{MyDoc.pdf} using
+      \textprog{pdflatex}. Requires the \textcmakevar{PDFLATEX\_COMPILER}
+      CMake variable to be set.
+    \item[\textmaketarget{ps}] Creates \textfile{MyDoc.ps}. Requires the
+      \textcmakevar{DVIPS\_CONVERTER} CMake variable to be set.
+    \item[\textmaketarget{safepdf}] Creates \textfile{MyDoc.pdf} from
+      \textfile{MyDoc.ps} using \textprog{ps2pdf}. Many publishers prefer
+      pdfs are created this way. Requires the
+      \textcmakevar{PS2PDF\_CONVERTER} CMake variable to be set.
+    \item[\textmaketarget{html}] Creates html pages. Requires the
+      \textcmakevar{LATEX2HTML\_CONVERTER} CMake variable to be set.
+  \end{description}
+
+  One caveat about using \UseLATEX is that you are required to do an
+  out-of-source build. That is, CMake must be run in a directory other than
+  the source directory. This is necessary as latex is very picky about file
+  locations, and the relative locations of some generated or copied files
+  can only be maintained if everything is copied to a separate directory
+  structure.
+
+  \subsection{Using a Bibliography}
+  \label{sec:UsingABibliography}
+
+  For any technical document, you will probably want to maintain a \bibtex
+  database of papers you are referencing in the paper. You can incorporate
+  your .bib files by adding them after the \textcmake{BIBFILES} argument to
+  the \ald command.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib)
+  \end{CodeListing}
+
+  This will automatically add targets to build your bib file and link it
+  into your document. To use the \bibtex file in your \latex file, just do
+  as you normally would with \textlatex|\cite| commands and bibliography
+  commands:
+
+  \begin{CodeListing}
+\bibliographystyle{plain}
+\bibliography{ParallelVolumeRenderingInParaView}
+  \end{CodeListing}
+
+  You can list as many bibliography files as you like.
+
+  \subsection{Incoporating Images}
+  \label{sec:IncoporatingImages}
+
+  To be honest, incorporating images into \latex documents can be a real
+  pain. This is mostly because the format of the images needs to depend on
+  the version of \latex you are running (\textprog{latex}
+  vs. \textprog{pdflatex}). With these CMake macros, you only need to
+  convert your raster graphics to png or jpeg format and your vector
+  graphics to eps or pdf format. Place them all in a common directory
+  (e.g. images) and then use the \textcmake{IMAGE\_DIRS} option to the \ald
+  macro to point to them. \UseLATEX will take care of the rest.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
+                   IMAGE_DIRS images)
+  \end{CodeListing}
+
+  If you want to break up your image files in several different
+  directories, you can do that, too. Simply provide multiple directories
+  after the \textcmake{IMAGE\_DIRS} command.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
+                   IMAGE_DIRS icons figures)
+  \end{CodeListing}
+
+  Alternatively, you could list all of your image files separatly with the
+  \textcmake{IMAGES} option.
+
+  \begin{CodeListing}
+SET(MyDocImages
+  logo.eps
+  icons/next.png
+  icons/previous.png
+  figures/flowchart.eps
+  figures/team.jpeg
+  )
+ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
+  \end{CodeListing}
+  %$
+
+  Both the \textcmake{IMAGE\_DIRS} and \textcmake{IMAGES} can be used
+  together. The combined set of image files will be processed. If you wish
+  to provide a separate eps file and pdf or png file, that is OK,
+  too. \UseLATEX will handle that by copying over the correct file instead
+  of converting.
+
+
+  Once you establish the images directory, CMake will automatically find
+  all png and eps files in it and add makefile targets to use ImageMagick's
+  convert to convert the file times to those appropriate for the build. If
+  you do not have ImageMagick, you can get it for free from
+  \href{http://www.imagemagick.org}{http://www.imagemagick.org}. CMake will
+  also give you a \textcmakevar{LATEX\_SMALL\_IMAGES} option that, when on,
+  will downsample raster images. This can help speed up building and
+  viewing documents. It will also make the output image sizes smaller.
+
+  One more note about vector graphics. Encapsulated postscript (eps) files
+  have a bounding box that is often lost when converting to pdf types. When
+  using eps files, it is best to search for a line starting with
+  \textcmake{\%\%BoundingBox:} such as
+
+  \begin{CodeListing}
+%%BoundingBox: 58 77 734 536
+  \end{CodeListing}
+
+  and then copy these numbers to the \textlatex|bb| option of the \latex
+  \textlatex|\includegraphics| command:
+
+  \begin{CodeListing}
+\includegraphics[width=\linewidth,bb=58 77 734 536]
+  \end{CodeListing}
+
+  \subsection{Create a PDF by Default}
+  \label{sec:CreateAPDFByDefault}
+
+  By default, when you use \ald and then run make with no arguments, the
+  dvi file will be created. You have to specifically build the pdf target
+  to use \textfile{pdflatex} to create a pdf file. However, oftentimes we
+  want the pdf to be generated by default. To do that, simply use the
+  \textcmake{DEFAULT\_PDF} option to \ald:
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
+                   IMAGE_DIRS images
+		   DEFAULT_PDF)
+  \end{CodeListing}
+
+  \subsection{Building Multiple \latex Documents}
+  \label{sec:BuldingMultipleLatexDocuments}
+
+  The most commen use for \UseLATEX is to build a single document, such as
+  a paper you are working on. However, some use cases involve building
+  several documents at one time. To do this, you must call \ald multiple
+  times. However, if you do this, the dvi, pdf, etc. targets will be
+  generated multiple times, and that is illegal in the current version of
+  CMake.\footnote{CMake version 2.4 as of this writing.} To get around
+  this, you need to mangle the names of the targets that \ald creates. To
+  do this, use the \textcmake{MANGLE\_TARGET\_NAMES} option.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc1.tex MANGLE_TARGET_NAMES)
+ADD_LATEX_DOCUMENT(MyDoc2.tex MANGLE_TARGET_NAMES)
+  \end{CodeListing}
+
+  In the example above, the first call to \ald will create targets named
+  \textmaketarget{MyDoc1\_dvi}, \textmaketarget{MyDoc1\_pdf},
+  \textmaketarget{MyDoc1\_ps}, etc. whereas the second call will create
+  targets named \textmaketarget{MyDoc2\_*}.
+
+  If you still want the simple, short targets to build all of the
+  documents, you can add them yourself with custom targets that depend on
+  the targets created by \ald
+
+  \begin{CodeListing}
+ADD_CUSTOM_TARGET(dvi)
+ADD_DEPENDENCIES(MyDoc1_dvi MyDoc2_dvi)
+ADD_CUSTOM_TARGET(pdf)
+ADD_DEPENDENCIES(MyDoc1_pdf MyDoc2_pdf)
+ADD_CUSTOM_TARGET(ps)
+ADD_DEPENDENCIES(MyDoc1_ps MyDoc2_ps)
+  \end{CodeListing}
+
+  \subsection{Making an Index}
+  \label{sec:MakingAnIndex}
+
+  You can make an index in a \latex document by using the
+  \textlatexpackage{makeidx} package. However, this package requires you to
+  run the \textprog{makeindex} command. Simply add the
+  \textcmake{USE\_INDEX} option anywhere in the \ald arguments, and
+  \textprog{makeindex} will automatically be added to the build.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
+                   IMAGE_DIRS images
+		   USE_INDEX)
+  \end{CodeListing}
+
+  \subsection{Multipart \latex Files}
+  \label{sec:MultipartLatexFiles}
+
+  Often, it is convenient to split a \latex document into multiple files
+  and use the \latex \textlatex|\input| or \textlatex|\include| command to
+  put them back together. To do this, all the files have to be located
+  together. \UseLATEX can take care of that, too. Simply add the
+  \textcmake{INPUTS} argument to \ald to copy these files along with the
+  target tex file. Build dependencies to these files is also established.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  INPUTS Chapter1.tex Chapter2.tex Chapter3.tex Chapter4.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  USE_INDEX
+  )
+  \end{CodeListing}
+
+  As far as \UseLATEX is concerned, input files do not necessarily have to
+  be tex files.  For example, you might be including the contents of a text
+  file into your document with the \textlatex|\VerbatimInput| command of
+  the \textlatexpackage{fancyvrb} package.  In fact, you could also add
+  graphic files as inputs, but you would not get the extra conversion
+  features described in Section~\ref{sec:IncoporatingImages}.
+
+  \subsection{Configuring \latex Files}
+  \label{sec:ConfiguringLatexFiles}
+
+  Sometimes it is convenient to control the build options of your tex file
+  with CMake variables. You can achieve this by using the
+  \textcmake{CONFIGURE} argument to \ald.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  INPUTS Chapter1.tex Chapter2.tex Chapter3.tex Chapter4.tex
+  CONFIGURE MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  USE_INDEX
+  )
+  \end{CodeListing}
+
+  In the above example, in addition to copying \textfile{MyDoc.tex} to the
+  binary directory, \UseLATEX will configure \textfile{MyDoc.tex}. That is,
+  it will find all occurrences of \textcmake{@\textvar{VARIABLE}@} and
+  replace that string with the current CMake variable
+  \textcmakevar{\textvar{VARIABLE}}.
+
+  With the \textcmake{CONFIGURE} argument you can list the target tex file
+  (as shown above) as well as any other tex file listed in the
+  \textcmake{INPUTS} argument.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  INPUTS Ch1Config.tex Ch1.tex Ch2Config.tex
+         Ch2.tex Ch3Config Ch3.tex
+  CONFIGURE Ch1Config.tex Ch2Config.tex Ch3Config.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  USE_INDEX
+  )
+  \end{CodeListing}
+
+  Be careful when using the \textcmake{CONFIGURE} option. Unfortunately,
+  the \textlatex|@| symbol is used by \latex in some places. For example,
+  when establishing a tabular environment, an \textlatex|@| is used to
+  define the space between columns. If you use it more than once, then
+  \UseLATEX will erroneously replace part of the definition of your columns
+  for a macro (which is probably an empty string). This can be particularly
+  troublesome to debug as \latex will give an error in a place that, in the
+  original document, is legal. Hence, it is best to only configure tex
+  files that contain very little text of the actual document and instead
+  are mostly setup and options.
+
+  %-----------------------------------------------------------------------------
+
+  \section{Frequently Asked Questions}
+  \label{sec:FrequentlyAskedQuestions}
+
+  This section includes resolutions to common questions and issues
+  concerning use of \UseLATEX and with \latex in general.
+
+  \subsection{How do I process \latex files on Windows?}
+  \label{sec:How_do_I_process_latex_files_on_Windows}
+
+  I have successfully used two different ports of LaTeX for windows: the
+  \href{http://www.cygwin.com/}{cygwin} port
+  (\href{http://www.cygwin.com/}{http://www.cygwin.com/}) and the
+  \href{http://www.miktex.org/}{\miktex} port
+  (\href{http://www.miktex.org/}{http://www.miktex.org/}).
+
+  If you use the cygwin port of \latex, you must also use the cygwin port
+  of CMake, make, and ImageMagick. If you use the \miktex port of \latex,
+  you must use the CMake from
+  \href{http://www.cmake.org/HTML/Download.html}{http://www.cmake.org/HTML/Download.html},
+  the ImageMagick port from
+  \href{http://www.imagemagick.org/script/index.php}{http://www.imagemagick.org/script/index.php},
+  and a native build tool like MSVC or the GNU make port at
+  \href{http://unxutils.sourceforge.net/}{http://unxutils.sourceforge.net/}.
+  \emph{Do not use the ``native'' CMake program with any cygwin programs or
+  the cygwin CMake program with any non-cygwin programs.} This issue at
+  hand is that the cygwin ports create and treat filenames differently then
+  other windows programs.\footnote{If you are careful, you can use the
+  cygwin version of make with the windows ports of CMake, \latex, and
+  ImageMagick.  It is an easy way around the problems described in
+  Section~\ref{sec:Why_is_convert_failing_on_Windows}.}
+
+  Also be aware that if you have images in your document, there are
+  numerous problems that can occur on Windows with the ImageMagick convert
+  program. See Section~\ref{sec:Why_is_convert_failing_on_Windows} for more
+  information.
+
+  \subsection{How do I process \latex files on Mac OS X?}
+  \label{sec:How_do_I_process_latex_files_on_Mac_OS_X}
+
+  I highly recommend using the port of \latex that is available from the
+  \href{http://www.finkproject.org/}{fink project}. The easiest way to get
+  files from \href{http://www.finkproject.org/}{fink project} is to use
+  \href{http://finkcommander.sourceforge.net/}{FinkCommander}
+  (\href{http://finkcommander.sourceforge.net/}{http://finkcommander.sourceforge.net/}).
+
+  The ImageMagick \textprog{convert} program is also available from the
+  \href{http://www.finkproject.org/}{fink project}.
+
+  \subsection{Why is convert failing on Windows?}
+  \label{sec:Why_is_convert_failing_on_Windows}
+
+  Assuming that you have correctly downloaded and installed an appropriate
+  version of ImageMagick (as specified in
+  Section~\ref{How_do_I_process_LaTeX_files_on_Windows}), there are several
+  other problems that users can run into the created build files attempt to
+  run the convert program.
+
+  A common error seen is 
+
+  \begin{CodeListing}
+Invalid Parameter - filename
+  \end{CodeListing}
+
+  This is probably because CMake has found the wrong \textprog{convert}
+  program. Windows is installed with a program named \textprog{convert} in
+  \textfile{\%SYSTEMROOT\%$\backslash$system32}. This \textprog{convert}
+  program is used to change the filesystem type on a hard drive. Since the
+  windows \textfile{convert} is in a system binary directory, it is usually
+  found in the path before the installed ImageMagick \textfile{convert}
+  program. (Don't get me started about the logic behind this.) Make sure
+  that the \textcmakevar{IMAGEMAGICK\_CONVERT} CMake variable is pointing
+  to the correct \textprog{convert} program.
+
+  Another common error is that \textprog{convert} not finding a file that
+  is clearly there.
+
+  \begin{CodeListing}
+convert: unable to open image `filename'
+  \end{CodeListing}
+
+  If you notice that the drive letter is stripped off of the filename
+  (i.e. \textfile{C:}), then you are probably mixing the Cygwin version of
+  \textprog{convert} with the non-cygwin CMake. The cygwin version of
+  \textprog{convert} uses the colon (:), as a directory separator for
+  inputs. Thus, it assumes the output file name is really two input files
+  separated by the colon. Switch to the non-cygwin port of ImageMagick to
+  fix this.
+
+  If you are using nmake, you may also see the following error: 
+
+  \begin{CodeListing}
+convert.exe: unable to open image `C:': Permission denied.
+  \end{CodeListing}
+
+  I don't know what causes this error, but it appears to have something to
+  do with some strange behavior of nmake when quoting the convert
+  executable. The easiest solution is to use a different build program
+  (such as make or MSVC's IDE or a unix port of make). If anyone finds away
+  around this problem, please contribute back.
+
+  \subsection{Why does make stop after each image conversion?}
+  \label{sec:Why_does_make_stop_after_each_image_conversion}
+
+  There is a bug in the ImageMagick convert version 6.1.8 that
+  inappropriatly returns a failure condition even when the image convert
+  was successful. The problem might also occur in other ImageMagick
+  versions. Try updating your installation of ImageMagick.
+
+  %-----------------------------------------------------------------------------
+
+  
+  \section{Acknowledgments}
+
+  Sandia is a multiprogram laboratory operated by Sandia Corporation, a
+  Lockheed Martin Company, for the United States Department of Energy{}'s
+  National Nuclear Security Administration under contract
+  DE-AC04-94AL85000.
+
+  %-----------------------------------------------------------------------------
+
+  \appendix
+
+  \section{Sample CMakeLists.txt}
+  \label{sec:SampleCMakeLists.txt}
+
+  Below is a sample listing of CMakeLists.txt.  In fact, it is the
+  CMakeLists.txt that is used to build this document.
+
+  \includeCodeListing{CMakeLists.txt}
+
+  \section{UseLATEX.cmake Listing}
+  \label{sec:UseLATEX.cmakeListing}
+
+  \includeCodeListing[fontsize=\footnotesize]{UseLATEX.cmake}
+
+\end{document}
