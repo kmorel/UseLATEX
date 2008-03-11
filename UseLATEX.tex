@@ -67,8 +67,9 @@
 
   \begin{itemize}
   \item Runs \latex multiple times to resolve links. 
-  \item Can run \textprog{bibtex} and \textprog{makeindex} to make
-    bibliographies and/or indexes.
+  \item Can run \textprog{bibtex}, \textprog{makeindex}, and
+    \textprog{makeglossaries} to make bibliographies, indexes, and/or
+    glossaries.
   \item Optionally runs configure on your \latex files to replace
     \textcmake{@\textvar{VARIABLE}@} with the equivalent CMake variable.
   \item Automatically finds png, jpeg, eps, and pdf files and converts them
@@ -290,6 +291,27 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
 		   USE_INDEX)
   \end{CodeListing}
 
+  \subsection{Making a Glossary}
+  \label{sec:MakingAGlossary}
+
+  There are multiple ways to make a glossary in a \latex document, but the
+  \textlatexpackage{glossaries} package provides one of the most convenient
+  ways of doing so.  Like the \textlatexpackage{makeidx} package,
+  \textlatexpackage{glossaries} requires running a separate program,
+  \textprog{makeglossaries}, for building auxiliary files.  Simply add the
+  \textcmake{USE\_GLOSSARIES} option anywhere in the \ald arguments, and
+  \textprog{makeglossaries} will automatically be added to the build.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
+                   IMAGE_DIRS images
+		   USE_GLOSSARIES)
+  \end{CodeListing}
+
+  Note that the \textprog{makeglossaries} program is not included in many
+  \latex distributions.  You may need to download it from the
+  \textlatexpackage{glossaries} package source.
+
   \subsection{Multipart \latex Files}
   \label{sec:MultipartLatexFiles}
 
@@ -480,10 +502,17 @@ convert.exe: unable to open image `C:': Permission denied.
   
   \section{Acknowledgments}
 
-  Sandia is a multiprogram laboratory operated by Sandia Corporation, a
-  Lockheed Martin Company, for the United States Department of Energy{}'s
-  National Nuclear Security Administration under contract
-  DE-AC04-94AL85000.
+  Thanks to all of the following contributors.
+
+  \begin{description}
+  \item[\O{}ystein S. Haaland] Support for makeglossaries command.
+  \item[Eric Noulard] Support for any extension on \latex input files.
+  \end{description}
+
+  This work was primarily done at Sandia National Laboratories.  Sandia is
+  a multiprogram laboratory operated by Sandia Corporation, a Lockheed
+  Martin Company, for the United States Department of Energy's National
+  Nuclear Security Administration under contract DE-AC04-94AL85000.
 
   %-----------------------------------------------------------------------------
 
@@ -492,7 +521,7 @@ convert.exe: unable to open image `C:': Permission denied.
   \section{Sample CMakeLists.txt}
   \label{sec:SampleCMakeLists.txt}
 
-  Below is a sample listing of CMakeLists.txt.  In fact, it is the
+  Following is a sample listing of CMakeLists.txt.  In fact, it is the
   CMakeLists.txt that is used to build this document.
 
   \includeCodeListing{CMakeLists.txt}

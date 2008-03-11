@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.5.0
+# Version: 1.6.0
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -18,7 +18,8 @@
 #                       [IMAGE_DIRS] <image_directories>
 #                       [IMAGES] <image_files>
 #                       [CONFIGURE] <tex_files>
-#                       [USE_INDEX] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
+#                       [USE_INDEX] [USE_GLOSSARIES]
+#                       [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
@@ -53,6 +54,9 @@
 #       commands to build an index are made.
 #
 # History:
+#
+# 1.6.0 Allow the use of the makeglossaries command.  Thanks to Oystein
+#       S. Haaland for the patch.
 #
 # 1.5.0 Allow any type of file in the INPUTS lists, not just tex file
 #       (suggested by Eric Noulard).  As a consequence, the ability to
@@ -133,11 +137,20 @@ MACRO(LATEX_GET_OUTPUT_PATH var)
 ENDMACRO(LATEX_GET_OUTPUT_PATH)
 
 FIND_PACKAGE(LATEX)
+
+# LATEX package currently does not find makeglossaries.
+FIND_PROGRAM(MAKEGLOSSARIES_COMPILER
+  NAMES makeglossaries
+  PATHS ${MIKTEX_BINARY_PATH}
+        /usr/bin
+)
+
 MARK_AS_ADVANCED(CLEAR
   LATEX_COMPILER
   PDFLATEX_COMPILER
   BIBTEX_COMPILER
   MAKEINDEX_COMPILER
+  MAKEGLOSSARIES_COMPILER
   DVIPS_CONVERTER
   PS2PDF_CONVERTER
   LATEX2HTML_CONVERTER
@@ -148,6 +161,7 @@ MACRO(LATEX_NEEDIT VAR NAME)
     MESSAGE(SEND_ERROR "I need the ${NAME} command.")
   ENDIF(NOT ${VAR})
 ENDMACRO(LATEX_NEEDIT)
+
 MACRO(LATEX_WANTIT VAR NAME)
   IF (NOT ${VAR})
     MESSAGE(STATUS "I could not find the ${NAME} command.")
@@ -158,6 +172,7 @@ LATEX_NEEDIT(LATEX_COMPILER latex)
 LATEX_WANTIT(PDFLATEX_COMPILER pdflatex)
 LATEX_NEEDIT(BIBTEX_COMPILER bibtex)
 LATEX_NEEDIT(MAKEINDEX_COMPILER makeindex)
+LATEX_WANTIT(MAKEGLOSSARIES_COMPILER makeglossaries)
 LATEX_WANTIT(DVIPS_CONVERTER dvips)
 LATEX_WANTIT(PS2PDF_CONVERTER ps2pdf)
 LATEX_WANTIT(LATEX2HTML_CONVERTER latex2html)
@@ -170,6 +185,8 @@ SET(BIBTEX_COMPILER_FLAGS ""
   CACHE STRING "Flags passed to bibtex.")
 SET(MAKEINDEX_COMPILER_FLAGS ""
   CACHE STRING "Flags passed to makeindex.")
+SET(MAKEGLOSSARIES_COMPILER_FLAGS ""
+  CACHE STRING "Flags passed to makeglossaries.")
 SET(DVIPS_CONVERTER_FLAGS "-Ppdf -G0 -t letter"
   CACHE STRING "Flags passed to dvips.")
 SET(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
@@ -181,6 +198,7 @@ MARK_AS_ADVANCED(
   PDFLATEX_COMPILER_FLAGS
   BIBTEX_COMPILER_FLAGS
   MAKEINDEX_COMPILER_FLAGS
+  MAKEGLOSSARIES_COMPILER_FLAGS
   DVIPS_CONVERTER_FLAGS
   PS2PDF_CONVERTER_FLAGS
   LATEX2HTML_CONVERTER_FLAGS
@@ -189,6 +207,7 @@ SEPARATE_ARGUMENTS(LATEX_COMPILER_FLAGS)
 SEPARATE_ARGUMENTS(PDFLATEX_COMPILER_FLAGS)
 SEPARATE_ARGUMENTS(BIBTEX_COMPILER_FLAGS)
 SEPARATE_ARGUMENTS(MAKEINDEX_COMPILER_FLAGS)
+SEPARATE_ARGUMENTS(MAKEGLOSSARIES_COMPILER_FLAGS)
 SEPARATE_ARGUMENTS(DVIPS_CONVERTER_FLAGS)
 SEPARATE_ARGUMENTS(PS2PDF_CONVERTER_FLAGS)
 SEPARATE_ARGUMENTS(LATEX2HTML_CONVERTER_FLAGS)
@@ -380,7 +399,7 @@ ENDMACRO(LATEX_PARSE_ARGUMENTS)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARIES] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -391,7 +410,7 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE"
-    "USE_INDEX;DEFAULT_PDF;MANGLE_TARGET_NAMES"
+    "USE_INDEX;USE_GLOSSARIES;DEFAULT_PDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -485,6 +504,20 @@ MACRO(ADD_LATEX_TARGETS)
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
   ENDIF (LATEX_USE_INDEX)
+
+  IF (LATEX_USE_GLOSSARIES)
+    LATEX_NEEDIT(MAKEGLOSSARIES_COMPILER makeglossaries)
+    SET(make_dvi_command ${make_dvi_command}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${MAKEGLOSSARIES_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} ${LATEX_TARGET})
+    SET(make_pdf_command ${make_pdf_command}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${MAKEGLOSSARIES_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} ${LATEX_TARGET})
+  ENDIF (LATEX_USE_GLOSSARIES)
 
   SET(make_dvi_command ${make_dvi_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
