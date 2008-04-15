@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.6.0
+# Version: 1.6.1
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -18,7 +18,7 @@
 #                       [IMAGE_DIRS] <image_directories>
 #                       [IMAGES] <image_files>
 #                       [CONFIGURE] <tex_files>
-#                       [USE_INDEX] [USE_GLOSSARIES]
+#                       [USE_INDEX] [USE_GLOSSARY]
 #                       [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
@@ -51,9 +51,13 @@
 #       target names above will be mangled with the <tex_file> name.  This
 #       is to make the targets unique if ADD_LATEX_DOCUMENT is called for
 #       multiple documents.  If the argument USE_INDEX is given, then
-#       commands to build an index are made.
+#       commands to build an index are made.  If the argument USE_GLOSSARY
+#       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.6.1 Ported the makeglossaries command to CMake and embedded the port
+#       into UseLATEX.cmake.
 #
 # 1.6.0 Allow the use of the makeglossaries command.  Thanks to Oystein
 #       S. Haaland for the patch.
@@ -115,120 +119,9 @@
 # 0.4.0 First version posted to CMake Wiki.
 #
 
-SET(LATEX_OUTPUT_PATH "${LATEX_OUTPUT_PATH}"
-  CACHE PATH "If non empty, specifies the location to place LaTeX output."
-  )
-
-MACRO(LATEX_GET_OUTPUT_PATH var)
-  SET(${var})
-  IF (LATEX_OUTPUT_PATH)
-    IF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-      MESSAGE(SEND_ERROR "You cannot set LATEX_OUTPUT_PATH to the same directory that contains LaTeX input files.")
-    ELSE ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-      SET(${var} "${LATEX_OUTPUT_PATH}")
-    ENDIF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-  ELSE (LATEX_OUTPUT_PATH)
-    IF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-      MESSAGE(SEND_ERROR "LaTeX files must be built out of source or you must set LATEX_OUTPUT_PATH.")
-    ELSE ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-      SET(${var} "${CMAKE_CURRENT_BINARY_DIR}")
-    ENDIF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-  ENDIF (LATEX_OUTPUT_PATH)
-ENDMACRO(LATEX_GET_OUTPUT_PATH)
-
-FIND_PACKAGE(LATEX)
-
-# LATEX package currently does not find makeglossaries.
-FIND_PROGRAM(MAKEGLOSSARIES_COMPILER
-  NAMES makeglossaries
-  PATHS ${MIKTEX_BINARY_PATH}
-        /usr/bin
-)
-
-MARK_AS_ADVANCED(CLEAR
-  LATEX_COMPILER
-  PDFLATEX_COMPILER
-  BIBTEX_COMPILER
-  MAKEINDEX_COMPILER
-  MAKEGLOSSARIES_COMPILER
-  DVIPS_CONVERTER
-  PS2PDF_CONVERTER
-  LATEX2HTML_CONVERTER
-  )
-
-MACRO(LATEX_NEEDIT VAR NAME)
-  IF (NOT ${VAR})
-    MESSAGE(SEND_ERROR "I need the ${NAME} command.")
-  ENDIF(NOT ${VAR})
-ENDMACRO(LATEX_NEEDIT)
-
-MACRO(LATEX_WANTIT VAR NAME)
-  IF (NOT ${VAR})
-    MESSAGE(STATUS "I could not find the ${NAME} command.")
-  ENDIF(NOT ${VAR})
-ENDMACRO(LATEX_WANTIT)
-
-LATEX_NEEDIT(LATEX_COMPILER latex)
-LATEX_WANTIT(PDFLATEX_COMPILER pdflatex)
-LATEX_NEEDIT(BIBTEX_COMPILER bibtex)
-LATEX_NEEDIT(MAKEINDEX_COMPILER makeindex)
-LATEX_WANTIT(MAKEGLOSSARIES_COMPILER makeglossaries)
-LATEX_WANTIT(DVIPS_CONVERTER dvips)
-LATEX_WANTIT(PS2PDF_CONVERTER ps2pdf)
-LATEX_WANTIT(LATEX2HTML_CONVERTER latex2html)
-
-SET(LATEX_COMPILER_FLAGS "-interaction=nonstopmode"
-  CACHE STRING "Flags passed to latex.")
-SET(PDFLATEX_COMPILER_FLAGS ${LATEX_COMPILER_FLAGS}
-  CACHE STRING "Flags passed to pdflatex.")
-SET(BIBTEX_COMPILER_FLAGS ""
-  CACHE STRING "Flags passed to bibtex.")
-SET(MAKEINDEX_COMPILER_FLAGS ""
-  CACHE STRING "Flags passed to makeindex.")
-SET(MAKEGLOSSARIES_COMPILER_FLAGS ""
-  CACHE STRING "Flags passed to makeglossaries.")
-SET(DVIPS_CONVERTER_FLAGS "-Ppdf -G0 -t letter"
-  CACHE STRING "Flags passed to dvips.")
-SET(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
-  CACHE STRING "Flags passed to ps2pdf.")
-SET(LATEX2HTML_CONVERTER_FLAGS ""
-  CACHE STRING "Flags passed to latex2html.")
-MARK_AS_ADVANCED(
-  LATEX_COMPILER_FLAGS
-  PDFLATEX_COMPILER_FLAGS
-  BIBTEX_COMPILER_FLAGS
-  MAKEINDEX_COMPILER_FLAGS
-  MAKEGLOSSARIES_COMPILER_FLAGS
-  DVIPS_CONVERTER_FLAGS
-  PS2PDF_CONVERTER_FLAGS
-  LATEX2HTML_CONVERTER_FLAGS
-  )
-SEPARATE_ARGUMENTS(LATEX_COMPILER_FLAGS)
-SEPARATE_ARGUMENTS(PDFLATEX_COMPILER_FLAGS)
-SEPARATE_ARGUMENTS(BIBTEX_COMPILER_FLAGS)
-SEPARATE_ARGUMENTS(MAKEINDEX_COMPILER_FLAGS)
-SEPARATE_ARGUMENTS(MAKEGLOSSARIES_COMPILER_FLAGS)
-SEPARATE_ARGUMENTS(DVIPS_CONVERTER_FLAGS)
-SEPARATE_ARGUMENTS(PS2PDF_CONVERTER_FLAGS)
-SEPARATE_ARGUMENTS(LATEX2HTML_CONVERTER_FLAGS)
-
-FIND_PROGRAM(IMAGEMAGICK_CONVERT convert
-  DOC "The convert program that comes with ImageMagick (available at http://www.imagemagick.org)."
-  )
-IF (NOT IMAGEMAGICK_CONVERT)
-  MESSAGE(SEND_ERROR "Could not find convert program.  Please download ImageMagick from http://www.imagemagick.org and install.")
-ENDIF (NOT IMAGEMAGICK_CONVERT)
-
-OPTION(LATEX_SMALL_IMAGES
-  "If on, the raster images will be converted to 1/6 the original size.  This is because papers usually require 600 dpi images whereas most monitors only require at most 96 dpi.  Thus, smaller images make smaller files for web distributation and can make it faster to read dvi files."
-  OFF)
-IF (LATEX_SMALL_IMAGES)
-  SET(LATEX_RASTER_SCALE 16)
-  SET(LATEX_OPPOSITE_RASTER_SCALE 100)
-ELSE (LATEX_SMALL_IMAGES)
-  SET(LATEX_RASTER_SCALE 100)
-  SET(LATEX_OPPOSITE_RASTER_SCALE 16)
-ENDIF (LATEX_SMALL_IMAGES)
+#############################################################################
+# Generic helper macros
+#############################################################################
 
 # Helpful list macros.
 MACRO(LATEX_CAR var)
@@ -247,17 +140,227 @@ MACRO(LATEX_LIST_CONTAINS var value)
   ENDFOREACH (value2)
 ENDMACRO(LATEX_LIST_CONTAINS)
 
-# Just holds extensions for known image types.  They should all be lower case.
-SET(LATEX_DVI_VECTOR_IMAGE_EXTENSIONS .eps)
-SET(LATEX_DVI_RASTER_IMAGE_EXTENSIONS)
-SET(LATEX_DVI_IMAGE_EXTENSIONS
-  ${LATEX_DVI_VECTOR_IMAGE_EXTENSIONS} ${LATEX_DVI_RASTER_IMAGE_EXTENSIONS})
-SET(LATEX_PDF_VECTOR_IMAGE_EXTENSIONS .pdf)
-SET(LATEX_PDF_RASTER_IMAGE_EXTENSIONS .png .jpeg .jpg)
-SET(LATEX_PDF_IMAGE_EXTENSIONS
-  ${LATEX_PDF_VECTOR_IMAGE_EXTENSIONS} ${LATEX_PDF_RASTER_IMAGE_EXTENSIONS})
-SET(LATEX_IMAGE_EXTENSIONS
-  ${LATEX_DVI_IMAGE_EXTENSIONS} ${LATEX_PDF_IMAGE_EXTENSIONS})
+# Parse macro arguments.
+MACRO(LATEX_PARSE_ARGUMENTS prefix arg_names option_names)
+  SET(DEFAULT_ARGS)
+  FOREACH(arg_name ${arg_names})
+    SET(${prefix}_${arg_name})
+  ENDFOREACH(arg_name)
+  FOREACH(option ${option_names})
+    SET(${prefix}_${option})
+  ENDFOREACH(option)
+
+  SET(current_arg_name DEFAULT_ARGS)
+  SET(current_arg_list)
+  FOREACH(arg ${ARGN})
+    LATEX_LIST_CONTAINS(is_arg_name ${arg} ${arg_names})
+    IF (is_arg_name)
+      SET(${prefix}_${current_arg_name} ${current_arg_list})
+      SET(current_arg_name ${arg})
+      SET(current_arg_list)
+    ELSE (is_arg_name)
+      LATEX_LIST_CONTAINS(is_option ${arg} ${option_names})
+      IF (is_option)
+        SET(${prefix}_${arg} TRUE)
+      ELSE (is_option)
+        SET(current_arg_list ${current_arg_list} ${arg})
+      ENDIF (is_option)
+    ENDIF (is_arg_name)
+  ENDFOREACH(arg)
+  SET(${prefix}_${current_arg_name} ${current_arg_list})
+ENDMACRO(LATEX_PARSE_ARGUMENTS)
+
+# Match the contents of a file to a regular expression.
+MACRO(LATEX_FILE_MATCH variable filename regexp default)
+  # The FILE STRINGS command would be a bit better, but it's not supported on
+  # older versions of CMake.
+  FILE(READ ${filename} file_contents)
+  STRING(REGEX MATCHALL "${regexp}"
+    ${variable} ${file_contents}
+    )
+  IF (NOT ${variable})
+    SET(${variable} "${default}")
+  ENDIF (NOT ${variable})
+ENDMACRO(LATEX_FILE_MATCH)
+
+#############################################################################
+# Macros that perform processing during a LaTeX build.
+#############################################################################
+MACRO(LATEX_MAKEGLOSSARIES)
+  IF (NOT LATEX_TARGET)
+    MESSAGE(SEND_ERROR "Need to define LATEX_TARGET")
+  ENDIF (NOT LATEX_TARGET)
+
+  IF (NOT MAKEINDEX_COMPILER)
+    MESSAGE(SEND_ERROR "Need to define MAKEINDEX_COMPILER")
+  ENDIF (NOT MAKEINDEX_COMPILER)
+
+  SET(aux_file ${LATEX_TARGET}.aux)
+
+  IF (NOT EXISTS ${aux_file})
+    MESSAGE(SEND_ERROR "${aux_file} does not exist.  Run latex on your target file.")
+  ENDIF (NOT EXISTS ${aux_file})
+
+  LATEX_FILE_MATCH(newglossary_lines ${aux_file}
+    "@newglossary[ \t]*{([^}]*)}{([^}]*)}{([^}]*)}{([^}]*)}"
+    "@newglossary{main}{glg}{gls}{glo}"
+    )
+
+  LATEX_FILE_MATCH(istfile_line ${aux_file}
+    "@istfilename[ \t]*{([^}]*)}"
+    "@istfilename{${LATEX_TARGET}.ist}"
+    )
+  STRING(REGEX REPLACE "@istfilename[ \t]*{([^}]*)}" "\\1"
+    istfile ${istfile_line}
+    )
+
+  FOREACH(newglossary ${newglossary_lines})
+    STRING(REGEX REPLACE
+      "@newglossary[ \t]*{([^}]*)}{([^}]*)}{([^}]*)}{([^}]*)}"
+      "\\1" glossary_name ${newglossary}
+      )
+    STRING(REGEX REPLACE
+      "@newglossary[ \t]*{([^}]*)}{([^}]*)}{([^}]*)}{([^}]*)}"
+      "${LATEX_TARGET}.\\2" glossary_log ${newglossary}
+      )
+    STRING(REGEX REPLACE
+      "@newglossary[ \t]*{([^}]*)}{([^}]*)}{([^}]*)}{([^}]*)}"
+      "${LATEX_TARGET}.\\3" glossary_out ${newglossary}
+      )
+    STRING(REGEX REPLACE
+      "@newglossary[ \t]*{([^}]*)}{([^}]*)}{([^}]*)}{([^}]*)}"
+      "${LATEX_TARGET}.\\4" glossary_in ${newglossary}
+      )
+    MESSAGE("${MAKEINDEX_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}")
+    EXEC_PROGRAM("${MAKEINDEX_COMPILER}" ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+      -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}
+      )
+  ENDFOREACH(newglossary)
+ENDMACRO(LATEX_MAKEGLOSSARIES)
+
+#############################################################################
+# Helper macros for establishing LaTeX build.
+#############################################################################
+
+MACRO(LATEX_NEEDIT VAR NAME)
+  IF (NOT ${VAR})
+    MESSAGE(SEND_ERROR "I need the ${NAME} command.")
+  ENDIF(NOT ${VAR})
+ENDMACRO(LATEX_NEEDIT)
+
+MACRO(LATEX_WANTIT VAR NAME)
+  IF (NOT ${VAR})
+    MESSAGE(STATUS "I could not find the ${NAME} command.")
+  ENDIF(NOT ${VAR})
+ENDMACRO(LATEX_WANTIT)
+
+MACRO(LATEX_SETUP_VARIABLES)
+  SET(LATEX_OUTPUT_PATH "${LATEX_OUTPUT_PATH}"
+    CACHE PATH "If non empty, specifies the location to place LaTeX output."
+    )
+
+  FIND_PACKAGE(LATEX)
+
+  MARK_AS_ADVANCED(CLEAR
+    LATEX_COMPILER
+    PDFLATEX_COMPILER
+    BIBTEX_COMPILER
+    MAKEINDEX_COMPILER
+    DVIPS_CONVERTER
+    PS2PDF_CONVERTER
+    LATEX2HTML_CONVERTER
+    )
+
+  LATEX_NEEDIT(LATEX_COMPILER latex)
+  LATEX_WANTIT(PDFLATEX_COMPILER pdflatex)
+  LATEX_NEEDIT(BIBTEX_COMPILER bibtex)
+  LATEX_NEEDIT(MAKEINDEX_COMPILER makeindex)
+  LATEX_WANTIT(DVIPS_CONVERTER dvips)
+  LATEX_WANTIT(PS2PDF_CONVERTER ps2pdf)
+  LATEX_WANTIT(LATEX2HTML_CONVERTER latex2html)
+
+  SET(LATEX_COMPILER_FLAGS "-interaction=nonstopmode"
+    CACHE STRING "Flags passed to latex.")
+  SET(PDFLATEX_COMPILER_FLAGS ${LATEX_COMPILER_FLAGS}
+    CACHE STRING "Flags passed to pdflatex.")
+  SET(BIBTEX_COMPILER_FLAGS ""
+    CACHE STRING "Flags passed to bibtex.")
+  SET(MAKEINDEX_COMPILER_FLAGS ""
+    CACHE STRING "Flags passed to makeindex.")
+  SET(MAKEGLOSSARIES_COMPILER_FLAGS ""
+    CACHE STRING "Flags passed to makeglossaries.")
+  SET(DVIPS_CONVERTER_FLAGS "-Ppdf -G0 -t letter"
+    CACHE STRING "Flags passed to dvips.")
+  SET(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
+    CACHE STRING "Flags passed to ps2pdf.")
+  SET(LATEX2HTML_CONVERTER_FLAGS ""
+    CACHE STRING "Flags passed to latex2html.")
+  MARK_AS_ADVANCED(
+    LATEX_COMPILER_FLAGS
+    PDFLATEX_COMPILER_FLAGS
+    BIBTEX_COMPILER_FLAGS
+    MAKEINDEX_COMPILER_FLAGS
+    MAKEGLOSSARIES_COMPILER_FLAGS
+    DVIPS_CONVERTER_FLAGS
+    PS2PDF_CONVERTER_FLAGS
+    LATEX2HTML_CONVERTER_FLAGS
+    )
+  SEPARATE_ARGUMENTS(LATEX_COMPILER_FLAGS)
+  SEPARATE_ARGUMENTS(PDFLATEX_COMPILER_FLAGS)
+  SEPARATE_ARGUMENTS(BIBTEX_COMPILER_FLAGS)
+  SEPARATE_ARGUMENTS(MAKEINDEX_COMPILER_FLAGS)
+  SEPARATE_ARGUMENTS(MAKEGLOSSARIES_COMPILER_FLAGS)
+  SEPARATE_ARGUMENTS(DVIPS_CONVERTER_FLAGS)
+  SEPARATE_ARGUMENTS(PS2PDF_CONVERTER_FLAGS)
+  SEPARATE_ARGUMENTS(LATEX2HTML_CONVERTER_FLAGS)
+
+  FIND_PROGRAM(IMAGEMAGICK_CONVERT convert
+    DOC "The convert program that comes with ImageMagick (available at http://www.imagemagick.org)."
+    )
+  IF (NOT IMAGEMAGICK_CONVERT)
+    MESSAGE(SEND_ERROR "Could not find convert program.  Please download ImageMagick from http://www.imagemagick.org and install.")
+  ENDIF (NOT IMAGEMAGICK_CONVERT)
+
+  OPTION(LATEX_SMALL_IMAGES
+    "If on, the raster images will be converted to 1/6 the original size.  This is because papers usually require 600 dpi images whereas most monitors only require at most 96 dpi.  Thus, smaller images make smaller files for web distributation and can make it faster to read dvi files."
+    OFF)
+  IF (LATEX_SMALL_IMAGES)
+    SET(LATEX_RASTER_SCALE 16)
+    SET(LATEX_OPPOSITE_RASTER_SCALE 100)
+  ELSE (LATEX_SMALL_IMAGES)
+    SET(LATEX_RASTER_SCALE 100)
+    SET(LATEX_OPPOSITE_RASTER_SCALE 16)
+  ENDIF (LATEX_SMALL_IMAGES)
+
+  # Just holds extensions for known image types.  They should all be lower case.
+  SET(LATEX_DVI_VECTOR_IMAGE_EXTENSIONS .eps)
+  SET(LATEX_DVI_RASTER_IMAGE_EXTENSIONS)
+  SET(LATEX_DVI_IMAGE_EXTENSIONS
+    ${LATEX_DVI_VECTOR_IMAGE_EXTENSIONS} ${LATEX_DVI_RASTER_IMAGE_EXTENSIONS})
+  SET(LATEX_PDF_VECTOR_IMAGE_EXTENSIONS .pdf)
+  SET(LATEX_PDF_RASTER_IMAGE_EXTENSIONS .png .jpeg .jpg)
+  SET(LATEX_PDF_IMAGE_EXTENSIONS
+    ${LATEX_PDF_VECTOR_IMAGE_EXTENSIONS} ${LATEX_PDF_RASTER_IMAGE_EXTENSIONS})
+  SET(LATEX_IMAGE_EXTENSIONS
+    ${LATEX_DVI_IMAGE_EXTENSIONS} ${LATEX_PDF_IMAGE_EXTENSIONS})
+ENDMACRO(LATEX_SETUP_VARIABLES)
+
+MACRO(LATEX_GET_OUTPUT_PATH var)
+  SET(${var})
+  IF (LATEX_OUTPUT_PATH)
+    IF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      MESSAGE(SEND_ERROR "You cannot set LATEX_OUTPUT_PATH to the same directory that contains LaTeX input files.")
+    ELSE ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      SET(${var} "${LATEX_OUTPUT_PATH}")
+    ENDIF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  ELSE (LATEX_OUTPUT_PATH)
+    IF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      MESSAGE(SEND_ERROR "LaTeX files must be built out of source or you must set LATEX_OUTPUT_PATH.")
+    ELSE ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      SET(${var} "${CMAKE_CURRENT_BINARY_DIR}")
+    ENDIF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  ENDIF (LATEX_OUTPUT_PATH)
+ENDMACRO(LATEX_GET_OUTPUT_PATH)
 
 # Makes custom commands to convert a file to a particular type.
 MACRO(LATEX_CONVERT_IMAGE output_files input_file output_extension convert_flags
@@ -359,7 +462,6 @@ MACRO(ADD_LATEX_IMAGES)
   MESSAGE("The ADD_LATEX_IMAGES macro is deprecated.  Image directories are specified with LATEX_ADD_DOCUMENT.")
 ENDMACRO(ADD_LATEX_IMAGES)
 
-
 MACRO(LATEX_COPY_GLOBBED_FILES pattern dest)
   FILE(GLOB file_list ${pattern})
   FOREACH(in_file ${file_list})
@@ -368,38 +470,48 @@ MACRO(LATEX_COPY_GLOBBED_FILES pattern dest)
   ENDFOREACH(in_file)
 ENDMACRO(LATEX_COPY_GLOBBED_FILES)
 
-MACRO(LATEX_PARSE_ARGUMENTS prefix arg_names option_names)
-  SET(DEFAULT_ARGS)
-  FOREACH(arg_name ${arg_names})
-    SET(${prefix}_${arg_name})
-  ENDFOREACH(arg_name)
-  FOREACH(option ${option_names})
-    SET(${prefix}_${option})
-  ENDFOREACH(option)
+MACRO(LATEX_COPY_INPUT_FILE file)
+  LATEX_GET_OUTPUT_PATH(output_dir)
 
-  SET(current_arg_name DEFAULT_ARGS)
-  SET(current_arg_list)
-  FOREACH(arg ${ARGN})
-    LATEX_LIST_CONTAINS(is_arg_name ${arg} ${arg_names})
-    IF (is_arg_name)
-      SET(${prefix}_${current_arg_name} ${current_arg_list})
-      SET(current_arg_name ${arg})
-      SET(current_arg_list)
-    ELSE (is_arg_name)
-      LATEX_LIST_CONTAINS(is_option ${arg} ${option_names})
-      IF (is_option)
-        SET(${prefix}_${arg} TRUE)
-      ELSE (is_option)
-        SET(current_arg_list ${current_arg_list} ${arg})
-      ENDIF (is_option)
-    ENDIF (is_arg_name)
-  ENDFOREACH(arg)
-  SET(${prefix}_${current_arg_name} ${current_arg_list})
-ENDMACRO(LATEX_PARSE_ARGUMENTS)
+  IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+    GET_FILENAME_COMPONENT(path ${file} PATH)
+    FILE(MAKE_DIRECTORY ${output_dir}/${path})
+
+    LATEX_LIST_CONTAINS(use_config ${file} ${LATEX_CONFIGURE})
+    IF (use_config)
+      CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file}
+	${output_dir}/${file}
+	@ONLY
+	)
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
+	COMMAND ${CMAKE_COMMAND}
+	ARGS ${CMAKE_BINARY_DIR}
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
+	)
+    ELSE (use_config)
+      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
+	COMMAND ${CMAKE_COMMAND}
+	ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${output_dir}/${file}
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
+	)
+    ENDIF (use_config)
+  ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+    IF (EXISTS ${output_dir}/${file})
+      # Special case: output exists but input does not.  Assume that it was
+      # created elsewhere and skip the input file copy.
+    ELSE (EXISTS ${output_dir}/${file})
+      MESSAGE("Could not find input file ${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+    ENDIF (EXISTS ${output_dir}/${file})
+  ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+ENDMACRO(LATEX_COPY_INPUT_FILE)
+
+#############################################################################
+# Commands provided by the UseLATEX.cmake "package"
+#############################################################################
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARIES] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -410,7 +522,7 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE"
-    "USE_INDEX;USE_GLOSSARIES;DEFAULT_PDF;MANGLE_TARGET_NAMES"
+    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;DEFAULT_PDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -426,6 +538,11 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   IF (LATEX_DEFAULT_ARGS)
     LATEX_USAGE(${command} "Invalid or depricated arguments: ${LATEX_DEFAULT_ARGS}")
   ENDIF (LATEX_DEFAULT_ARGS)
+
+  # Backward compatibility between 1.6.0 and 1.6.1.
+  IF (LATEX_USE_GLOSSARIES)
+    SET(LATEX_USE_GLOSSARY TRUE)
+  ENDIF (LATEX_USE_GLOSSARIES)
 ENDMACRO(PARSE_ADD_LATEX_ARGUMENTS)
 
 MACRO(ADD_LATEX_TARGETS)
@@ -505,19 +622,28 @@ MACRO(ADD_LATEX_TARGETS)
       ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
   ENDIF (LATEX_USE_INDEX)
 
-  IF (LATEX_USE_GLOSSARIES)
-    LATEX_NEEDIT(MAKEGLOSSARIES_COMPILER makeglossaries)
+  IF (LATEX_USE_GLOSSARY)
     SET(make_dvi_command ${make_dvi_command}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${MAKEGLOSSARIES_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} ${LATEX_TARGET})
+      ${CMAKE_COMMAND}
+      -D LATEX_TARGET="${LATEX_TARGET}"
+      -D MAKEINDEX_COMPILER="${MAKEINDEX_COMPILER}"
+      -D MAKEGLOSSARIES_COMPILER_FLAGS="${MAKEGLOSSARIES_COMPILER_FLAGS}"
+      -P ${CMAKE_CURRENT_LIST_FILE}
+      )
     SET(make_pdf_command ${make_pdf_command}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${MAKEGLOSSARIES_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} ${LATEX_TARGET})
-  ENDIF (LATEX_USE_GLOSSARIES)
+      ${CMAKE_COMMAND}
+      -D LATEX_TARGET="${LATEX_TARGET}"
+      -D MAKEINDEX_COMPILER="${MAKEINDEX_COMPILER}"
+      -D MAKEGLOSSARIES_COMPILER_FLAGS="${MAKEGLOSSARIES_COMPILER_FLAGS}"
+      -P ${CMAKE_CURRENT_LIST_FILE}
+      )
+  ENDIF (LATEX_USE_GLOSSARY)
 
   SET(make_dvi_command ${make_dvi_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
@@ -576,42 +702,6 @@ MACRO(ADD_LATEX_TARGETS)
     )
 ENDMACRO(ADD_LATEX_TARGETS)
 
-MACRO(LATEX_COPY_INPUT_FILE file)
-  LATEX_GET_OUTPUT_PATH(output_dir)
-
-  IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
-    GET_FILENAME_COMPONENT(path ${file} PATH)
-    FILE(MAKE_DIRECTORY ${output_dir}/${path})
-
-    LATEX_LIST_CONTAINS(use_config ${file} ${LATEX_CONFIGURE})
-    IF (use_config)
-      CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file}
-	${output_dir}/${file}
-	@ONLY
-	)
-      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
-	COMMAND ${CMAKE_COMMAND}
-	ARGS ${CMAKE_BINARY_DIR}
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
-	)
-    ELSE (use_config)
-      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
-	COMMAND ${CMAKE_COMMAND}
-	ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${output_dir}/${file}
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
-	)
-    ENDIF (use_config)
-  ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
-    IF (EXISTS ${output_dir}/${file})
-      # Special case: output exists but input does not.  Assume that it was
-      # created elsewhere and skip the input file copy.
-    ELSE (EXISTS ${output_dir}/${file})
-      MESSAGE("Could not find input file ${CMAKE_CURRENT_SOURCE_DIR}/${file}")
-    ENDIF (EXISTS ${output_dir}/${file})
-  ENDIF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
-
-ENDMACRO(LATEX_COPY_INPUT_FILE)
-
 MACRO(ADD_LATEX_DOCUMENT)
   LATEX_GET_OUTPUT_PATH(output_dir)
   IF (output_dir)
@@ -642,3 +732,9 @@ MACRO(ADD_LATEX_DOCUMENT)
     ADD_LATEX_TARGETS(${ARGV})
   ENDIF (output_dir)
 ENDMACRO(ADD_LATEX_DOCUMENT)
+
+#############################################################################
+# Actually do stuff
+#############################################################################
+
+LATEX_SETUP_VARIABLES()

@@ -297,20 +297,18 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   There are multiple ways to make a glossary in a \latex document, but the
   \textlatexpackage{glossaries} package provides one of the most convenient
   ways of doing so.  Like the \textlatexpackage{makeidx} package,
-  \textlatexpackage{glossaries} requires running a separate program,
-  \textprog{makeglossaries}, for building auxiliary files.  Simply add the
-  \textcmake{USE\_GLOSSARIES} option anywhere in the \ald arguments, and
-  \textprog{makeglossaries} will automatically be added to the build.
+  \textlatexpackage{glossaries} requires running \textprog{makeindex} for
+  building auxiliary files.  However, building the glossary files can be
+  more complicated as there can be different sets of glossary files with
+  different extensions.  \UseLATEX will handle that for you.  Simply add
+  the \textcmake{USE\_GLOSSARY} option anywhere in the \ald arguments, and
+  the glossary creating will be handled for you.
 
   \begin{CodeListing}
 ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
                    IMAGE_DIRS images
-		   USE_GLOSSARIES)
+		   USE_GLOSSARY)
   \end{CodeListing}
-
-  Note that the \textprog{makeglossaries} program is not included in many
-  \latex distributions.  You may need to download it from the
-  \textlatexpackage{glossaries} package source.
 
   \subsection{Multipart \latex Files}
   \label{sec:MultipartLatexFiles}
@@ -505,7 +503,9 @@ convert.exe: unable to open image `C:': Permission denied.
   Thanks to all of the following contributors.
 
   \begin{description}
-  \item[\O{}ystein S. Haaland] Support for makeglossaries command.
+  \item[Alin Elena] Suggestions on removing dependence on makeglossaries
+    command.
+  \item[\O{}ystein S. Haaland] Support for making glossaries.
   \item[Eric Noulard] Support for any extension on \latex input files.
   \end{description}
 
