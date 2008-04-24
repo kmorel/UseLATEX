@@ -120,6 +120,14 @@
 #
 
 #############################################################################
+# Find the location of myself while originally executing.  If you do this
+# inside of a macro, it will recode where the macro was invoked.
+#############################################################################
+SET(LATEX_USE_LATEX_LOCATION ${CMAKE_CURRENT_LIST_FILE}
+  CACHE INTERNAL "Location of UseLATEX.cmake file." FORCE
+  )
+
+#############################################################################
 # Generic helper macros
 #############################################################################
 
@@ -187,6 +195,7 @@ ENDMACRO(LATEX_FILE_MATCH)
 # Macros that perform processing during a LaTeX build.
 #############################################################################
 MACRO(LATEX_MAKEGLOSSARIES)
+  MESSAGE("**************************** In makeglossaries")
   IF (NOT LATEX_TARGET)
     MESSAGE(SEND_ERROR "Need to define LATEX_TARGET")
   ENDIF (NOT LATEX_TARGET)
@@ -232,7 +241,7 @@ MACRO(LATEX_MAKEGLOSSARIES)
       "${LATEX_TARGET}.\\4" glossary_in ${newglossary}
       )
     MESSAGE("${MAKEINDEX_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}")
-    EXEC_PROGRAM("${MAKEINDEX_COMPILER}" ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+    EXEC_PROGRAM(${MAKEINDEX_COMPILER} ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
       -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}
       )
   ENDFOREACH(newglossary)
@@ -628,20 +637,22 @@ MACRO(ADD_LATEX_TARGETS)
       ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${CMAKE_COMMAND}
-      -D LATEX_TARGET="${LATEX_TARGET}"
-      -D MAKEINDEX_COMPILER="${MAKEINDEX_COMPILER}"
-      -D MAKEGLOSSARIES_COMPILER_FLAGS="${MAKEGLOSSARIES_COMPILER_FLAGS}"
-      -P ${CMAKE_CURRENT_LIST_FILE}
+      -D LATEX_BUILD_COMMAND=makeglossaries
+      -D LATEX_TARGET=${LATEX_TARGET}
+      -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+      -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+      -P ${LATEX_USE_LATEX_LOCATION}
       )
     SET(make_pdf_command ${make_pdf_command}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${CMAKE_COMMAND}
-      -D LATEX_TARGET="${LATEX_TARGET}"
-      -D MAKEINDEX_COMPILER="${MAKEINDEX_COMPILER}"
-      -D MAKEGLOSSARIES_COMPILER_FLAGS="${MAKEGLOSSARIES_COMPILER_FLAGS}"
-      -P ${CMAKE_CURRENT_LIST_FILE}
+      -D LATEX_BUILD_COMMAND=makeglossaries
+      -D LATEX_TARGET=${LATEX_TARGET}
+      -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+      -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+      -P ${LATEX_USE_LATEX_LOCATION}
       )
   ENDIF (LATEX_USE_GLOSSARY)
 
@@ -737,4 +748,19 @@ ENDMACRO(ADD_LATEX_DOCUMENT)
 # Actually do stuff
 #############################################################################
 
-LATEX_SETUP_VARIABLES()
+IF (LATEX_BUILD_COMMAND)
+  SET(command_handled)
+
+  IF ("${LATEX_BUILD_COMMAND}" STREQUAL makeglossaries)
+    LATEX_MAKEGLOSSARIES()
+    SET(command_handled TRUE)
+  ENDIF ("${LATEX_BUILD_COMMAND}" STREQUAL makeglossaries)
+
+  IF (NOT command_handled)
+    MESSAGE(SEND_ERROR "Unknown command: ${LATEX_BUILD_COMMAND}")
+  ENDIF (NOT command_handled)
+
+ELSE (LATEX_BUILD_COMMAND)
+  # Must be part of the actual configure (included from CMakeLists.txt).
+  LATEX_SETUP_VARIABLES()
+ENDIF (LATEX_BUILD_COMMAND)
