@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.6.1
+# Version: 1.6.2
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -18,6 +18,7 @@
 #                       [IMAGE_DIRS] <image_directories>
 #                       [IMAGES] <image_files>
 #                       [CONFIGURE] <tex_files>
+#                       [DEPENDS] <tex_files>
 #                       [USE_INDEX] [USE_GLOSSARY]
 #                       [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
@@ -33,7 +34,8 @@
 #       tex files also listed with the CONFIGURE option are also processed
 #       with the CMake CONFIGURE_FILE command (with the @ONLY flag.  Any
 #       file listed in CONFIGURE but not the target tex file or listed with
-#       INPUTS has no effect.
+#       INPUTS has no effect. DEPENDS can be used to specify generated files
+#       that are needed to compile the latex target.
 #
 #       The following targets are made:
 #               dvi: Makes <name>.dvi
@@ -55,6 +57,8 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.6.2 Added DEPENDS options (thanks to Theodore Papadopoulp).
 #
 # 1.6.1 Ported the makeglossaries command to CMake and embedded the port
 #       into UseLATEX.cmake.
@@ -364,6 +368,7 @@ MACRO(LATEX_GET_OUTPUT_PATH var)
     ENDIF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   ELSE (LATEX_OUTPUT_PATH)
     IF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      MESSAGE("${CMAKE_CURRENT_BINARY_DIR}" "   " "${CMAKE_CURRENT_SOURCE_DIR}")
       MESSAGE(SEND_ERROR "LaTeX files must be built out of source or you must set LATEX_OUTPUT_PATH.")
     ELSE ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
       SET(${var} "${CMAKE_CURRENT_BINARY_DIR}")
@@ -520,17 +525,17 @@ ENDMACRO(LATEX_COPY_INPUT_FILE)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
 # Parses arguments to ADD_LATEX_DOCUMENT and ADD_LATEX_TARGETS and sets the
-# variables LATEX_TARGET, LATEX_IMAGE_DIR, LATEX_BIBFILES, and
+# variables LATEX_TARGET, LATEX_IMAGE_DIR, LATEX_BIBFILES, LATEX_DEPENDS, and
 # LATEX_INPUTS.
 MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
-    "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE"
+    "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
     "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;DEFAULT_PDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
@@ -598,8 +603,8 @@ MACRO(ADD_LATEX_TARGETS)
     ${CMAKE_COMMAND} -E chdir ${output_dir}
     ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT})
 
-  SET(make_dvi_depends ${dvi_images})
-  SET(make_pdf_depends ${pdf_images})
+  SET(make_dvi_depends ${LATEX_DEPENDS} ${dvi_images})
+  SET(make_pdf_depends ${LATEX_DEPENDS} ${pdf_images})
   FOREACH(input ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
     SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
     SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
