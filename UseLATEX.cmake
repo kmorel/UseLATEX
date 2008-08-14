@@ -49,6 +49,10 @@
 #               auxclean: Deletes <name>.aux.  This is sometimes necessary
 #                       if a LaTeX error occurs and writes a bad aux file.
 #
+#	The dvi target is added to the ALL.  That is, it will be the target
+#	built by default.  If the DEFAULT_PDF argument is given, then the
+#	pdf target will be the default instead of dvi.
+#
 #       If the argument MANGLE_TARGET_NAMES is given, then each of the
 #       target names above will be mangled with the <tex_file> name.  This
 #       is to make the targets unique if ADD_LATEX_DOCUMENT is called for
@@ -58,7 +62,7 @@
 #
 # History:
 #
-# 1.7.0 Added DEPENDS options (thanks to Theodore Papadopoulp).
+# 1.7.0 Added DEPENDS options (thanks to Theodore Papadopoulo).
 #
 # 1.6.1 Ported the makeglossaries command to CMake and embedded the port
 #       into UseLATEX.cmake.
