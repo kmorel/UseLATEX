@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.6.2
+# Version: 1.7.0
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -58,7 +58,7 @@
 #
 # History:
 #
-# 1.6.2 Added DEPENDS options (thanks to Theodore Papadopoulp).
+# 1.7.0 Added DEPENDS options (thanks to Theodore Papadopoulp).
 #
 # 1.6.1 Ported the makeglossaries command to CMake and embedded the port
 #       into UseLATEX.cmake.
@@ -368,7 +368,6 @@ MACRO(LATEX_GET_OUTPUT_PATH var)
     ENDIF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   ELSE (LATEX_OUTPUT_PATH)
     IF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-      MESSAGE("${CMAKE_CURRENT_BINARY_DIR}" "   " "${CMAKE_CURRENT_SOURCE_DIR}")
       MESSAGE(SEND_ERROR "LaTeX files must be built out of source or you must set LATEX_OUTPUT_PATH.")
     ELSE ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
       SET(${var} "${CMAKE_CURRENT_BINARY_DIR}")
