@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.7.0}
+\newcommand{\UseLATEXVersion}{1.7.1}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -468,7 +468,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex DEPENDS generated_file.tex)
 
   Assuming that you have correctly downloaded and installed an appropriate
   version of ImageMagick (as specified in
-  Section~\ref{How_do_I_process_LaTeX_files_on_Windows}), there are several
+  Section~\ref{sec:How_do_I_process_latex_files_on_Windows}), there are several
   other problems that users can run into the created build files attempt to
   run the convert program.
 
@@ -535,7 +535,8 @@ convert.exe: unable to open image `C:': Permission denied.
     command.
   \item[\O{}ystein S. Haaland] Support for making glossaries.
   \item[Eric Noulard] Support for any file extension on \latex input files.
-  \item[Theodore Papadopoulo] DEPENDS parameter for \ald.
+  \item[Theodore Papadopoulo] DEPENDS parameter for \ald and help in
+    identifying some dependency issues.
   \end{description}
 
   This work was primarily done at Sandia National Laboratories.  Sandia is

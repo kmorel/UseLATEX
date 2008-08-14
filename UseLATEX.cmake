@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.7.0
+# Version: 1.7.1
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -61,6 +61,8 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.7.1 Fixed some dependency issues.
 #
 # 1.7.0 Added DEPENDS options (thanks to Theodore Papadopoulo).
 #
@@ -675,31 +677,45 @@ MACRO(ADD_LATEX_TARGETS)
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
     ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT})
 
+  # Add commands and targets for building dvi outputs.
+  ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${LATEX_TARGET}.dvi
+    COMMAND ${make_dvi_command}
+    DEPENDS ${make_dvi_depends}
+    )
   IF (LATEX_DEFAULT_PDF)
-    ADD_CUSTOM_TARGET(${dvi_target} ${make_dvi_command}
-      DEPENDS ${make_dvi_depends})
+    ADD_CUSTOM_TARGET(${dvi_target}
+      DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
   ELSE (LATEX_DEFAULT_PDF)
-    ADD_CUSTOM_TARGET(${dvi_target} ALL ${make_dvi_command}
-      DEPENDS ${make_dvi_depends})
+    ADD_CUSTOM_TARGET(${dvi_target} ALL
+      DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
   ENDIF (LATEX_DEFAULT_PDF)
 
+  # Add commands and targets for building pdf outputs (with pdflatex).
   IF (PDFLATEX_COMPILER)
+    ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${LATEX_TARGET}.pdf
+      COMMAND ${make_pdf_command}
+      DEPENDS ${make_pdf_depends}
+      )
     IF (LATEX_DEFAULT_PDF)
-      ADD_CUSTOM_TARGET(${pdf_target} ALL ${make_pdf_command}
-        DEPENDS ${make_pdf_depends})
+      ADD_CUSTOM_TARGET(${pdf_target} ALL
+        DEPENDS ${output_dir}/${LATEX_TARGET}.pdf)
     ELSE (LATEX_DEFAULT_PDF)
-      ADD_CUSTOM_TARGET(${pdf_target} ${make_pdf_command}
-        DEPENDS ${make_pdf_depends})
+      ADD_CUSTOM_TARGET(${pdf_target}
+        DEPENDS ${output_dir}/${LATEX_TARGET}.pdf)
     ENDIF (LATEX_DEFAULT_PDF)
   ENDIF (PDFLATEX_COMPILER)
 
   IF (DVIPS_CONVERTER)
+    ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${LATEX_TARGET}.ps
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
+      DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
     ADD_CUSTOM_TARGET(${ps_target}
-      ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
-      )
-    ADD_DEPENDENCIES(${ps_target} ${dvi_target})
+      DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
     IF (PS2PDF_CONVERTER)
+      # Since both the pdf and safepdf targets have the same output, we
+      # cannot properly do the dependencies for both.  When selecting safepdf,
+      # simply force a recompile every time.
       ADD_CUSTOM_TARGET(${safepdf_target}
         ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
