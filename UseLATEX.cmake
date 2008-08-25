@@ -49,9 +49,9 @@
 #               auxclean: Deletes <name>.aux.  This is sometimes necessary
 #                       if a LaTeX error occurs and writes a bad aux file.
 #
-#	The dvi target is added to the ALL.  That is, it will be the target
-#	built by default.  If the DEFAULT_PDF argument is given, then the
-#	pdf target will be the default instead of dvi.
+#       The dvi target is added to the ALL.  That is, it will be the target
+#       built by default.  If the DEFAULT_PDF argument is given, then the
+#       pdf target will be the default instead of dvi.
 #
 #       If the argument MANGLE_TARGET_NAMES is given, then each of the
 #       target names above will be mangled with the <tex_file> name.  This
@@ -77,16 +77,16 @@
 #       specify tex files without the .tex extension is removed.  The removed
 #       function is of dubious value anyway.
 #
-#	When copying input files, skip over any file that exists in the
-#	binary directory but does not exist in the source directory with the
-#	assumption that these files were added by some other mechanism.  I
-#	find this useful when creating large documents with multiple
-#	chapters that I want to build separately (for speed) as I work on
-#	them.  I use the same boilerplate as the starting point for all
-#	and just copy it with different configurations.  This was what the
-#	separate ADD_LATEX_DOCUMENT method was supposed to originally be for.
-#	Since its external use is pretty much deprecated, I removed that
-#	documentation.
+#       When copying input files, skip over any file that exists in the
+#       binary directory but does not exist in the source directory with the
+#       assumption that these files were added by some other mechanism.  I
+#       find this useful when creating large documents with multiple
+#       chapters that I want to build separately (for speed) as I work on
+#       them.  I use the same boilerplate as the starting point for all
+#       and just copy it with different configurations.  This was what the
+#       separate ADD_LATEX_DOCUMENT method was supposed to originally be for.
+#       Since its external use is pretty much deprecated, I removed that
+#       documentation.
 #
 # 1.4.1 Copy .sty files along with the other class and package files.
 #
@@ -499,20 +499,20 @@ MACRO(LATEX_COPY_INPUT_FILE file)
     LATEX_LIST_CONTAINS(use_config ${file} ${LATEX_CONFIGURE})
     IF (use_config)
       CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file}
-	${output_dir}/${file}
-	@ONLY
-	)
+        ${output_dir}/${file}
+        @ONLY
+        )
       ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
-	COMMAND ${CMAKE_COMMAND}
-	ARGS ${CMAKE_BINARY_DIR}
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
-	)
+        COMMAND ${CMAKE_COMMAND}
+        ARGS ${CMAKE_BINARY_DIR}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
+        )
     ELSE (use_config)
       ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${file}
-	COMMAND ${CMAKE_COMMAND}
-	ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${output_dir}/${file}
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
-	)
+        COMMAND ${CMAKE_COMMAND}
+        ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${output_dir}/${file}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${file}
+        )
     ENDIF (use_config)
   ELSE (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
     IF (EXISTS ${output_dir}/${file})
