@@ -222,13 +222,16 @@ ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
   \begin{CodeListing}
 %%BoundingBox: 58 77 734 536
   \end{CodeListing}
-
   and then copy these numbers to the \textlatex|bb| option of the \latex
   \textlatex|\includegraphics| command:
-
   \begin{CodeListing}
 \includegraphics[width=\linewidth,bb=58 77 734 536]
   \end{CodeListing}
+
+  This problem does not seem to occur when converting pdf files to eps.
+  Thus, I find it more convenient to create my vector graphics as pdf.
+  This, of course, is assuming that your program gives you enough control
+  over the pdf output to adjust the page size.
 
   \subsection{Create a PDF by Default}
   \label{sec:CreateAPDFByDefault}
