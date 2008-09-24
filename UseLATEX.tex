@@ -204,15 +204,24 @@ ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
   too. \UseLATEX will handle that by copying over the correct file instead
   of converting.
 
-
   Once you establish the images directory, CMake will automatically find
-  all png and eps files in it and add makefile targets to use ImageMagick's
-  convert to convert the file times to those appropriate for the build. If
-  you do not have ImageMagick, you can get it for free from
+  all files with known image extensions (currently eps, pdf, png, jpeg, and
+  jpg) in it and add makefile targets to use ImageMagick's convert to
+  convert the file times to those appropriate for the build. If you do not
+  have ImageMagick, you can get it for free from
   \href{http://www.imagemagick.org}{http://www.imagemagick.org}. CMake will
   also give you a \textcmakevar{LATEX\_SMALL\_IMAGES} option that, when on,
   will downsample raster images. This can help speed up building and
   viewing documents. It will also make the output image sizes smaller.
+
+  Depending on what program is launched to build your \latex file (either
+  \textprog{latex} or \textprog{pdflatex}, and \UseLATEX supports both), a
+  particular format for your image is required.  As stated, \UseLATEX
+  handles the necessary conversions for you.  However, you will not know in
+  advance what file extension is used on the image.  That is no problem.
+  Simply leave out the file extension in the file name argument to
+  \textlatex|\includegraphics| and \latex will find the file with the
+  appropriate extension for you.
 
   One more note about vector graphics. Encapsulated postscript (eps) files
   have a bounding box that is often lost when converting to pdf types. When
