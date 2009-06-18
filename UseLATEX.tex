@@ -466,14 +466,59 @@ ADD_LATEX_DOCUMENT(MyDoc.tex DEPENDS generated_file.tex)
   \subsection{How do I process \latex files on Mac OS X?}
   \label{sec:How_do_I_process_latex_files_on_Mac_OS_X}
 
-  I highly recommend using the port of \latex that is available from the
-  \href{http://www.finkproject.org/}{fink project}. The easiest way to get
-  files from \href{http://www.finkproject.org/}{fink project} is to use
-  \href{http://finkcommander.sourceforge.net/}{FinkCommander}
-  (\href{http://finkcommander.sourceforge.net/}{http://finkcommander.sourceforge.net/}).
+  Using \latex on Mac OS X is fairly straightforward because this OS is
+  built on top of Unix.  By using the Terminal program or X11 host, you can
+  run \latex much like any other Unix variant.  The only real issue is that
+  \latex and some of the supporting programs like CMake and ImageMagick are
+  not typically installed (whereas on Linux they often are).
 
-  The ImageMagick \textprog{convert} program is also available from the
-  \href{http://www.finkproject.org/}{fink project}.
+  Most applications port fairly easily to Mac OS so long as you are willing
+  to use them as typical Unix or X11 programs.  To make things even easier,
+  I recommend taking advantage of a Mac porting project to make this
+  process even easier.  \href{http://www.macports.org}{MacPorts}
+  (\href{http://www.macports.org}{http://www.macports.org}) is a good tool
+  providing a comprehensive set of tool ports including \latex, CMake, and
+  ImageMagick.  The \href{http://www.finkproject.org/}{fink project} and
+  \href{http://finkcommander.sourceforge.net/}{FinkCommander}
+  (\href{http://finkcommander.sourceforge.net/}{http://finkcommander.sourceforge.net/})
+  is a similar although less active project.
+
+  \subsection{Why does \UseLATEX have to copy my tex files?}
+  \label{sec:Why_does_UseLATEX_have_to_copy_my_tex_files}
+
+  \UseLATEX cannot process your tex file without copying it.  As explained
+  in Section~\ref{sec:Usage}, \latex is very picky about file locations.
+  The relative locations of files that your input files point to, and all
+  but the most simple \latex files point to other files, must remain
+  consistent.
+
+  \UseLATEX will often have to modify at least one file either through
+  configurations or image format and size conversions.  When creating new
+  files, \UseLATEX will have to copy either all of the files or none of the
+  files.  Since configuring and writing over an original file is
+  unacceptable, \UseLATEX forces you to configure it such that \latex
+  builds in a different directory than where you have placed the original.
+  If you do not specify a seperate directory, you get an error like the
+  following.
+
+  \begin{CodeListing}
+CMake Error at UseLATEX.cmake:377 (MESSAGE):
+  LaTeX files must be built out of source or you must set
+  LATEX_OUTPUT_PATH.
+  \end{CodeListing}
+
+  The best way around this problem is do an ``out of source'' build, which
+  is really the preferred method of using CMake in general.  To do an out
+  of source build, create a new build directory, go to that directory, and
+  run cmake from there, pointing to the source directory.
+
+  If for some reason an out of source build is not feasable or desireable,
+  you can set the \textcmakevar{LATEX\_OUTPUT\_PATH} variable to a
+  directory other than \textfile{.} (the local directory).  If you are
+  building a \latex document in the context of a larger project for which
+  you wish to support in source builds, consider pragmatically setting the
+  \textcmakevar{LATEX\_OUTPUT\_PATH} CMake cache variable from within your
+  \textfile{CMakeLists.txt}.
 
   \subsection{Why is convert failing on Windows?}
   \label{sec:Why_is_convert_failing_on_Windows}

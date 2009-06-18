@@ -1,5 +1,7 @@
 PROJECT(UseLATEX_DOC NONE)
 
+CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+
 INCLUDE(UseLATEX.cmake)
 
 # Note that normally neither CMakeLists.txt nor UseLATEX.cmake
