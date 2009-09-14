@@ -553,6 +553,96 @@ convert.exe: unable to open image `C:': Permission denied.
   (such as make or MSVC's IDE or a unix port of make). If anyone finds away
   around this problem, please contribute back.
 
+  \subsection{How do automate plot generation with command line programs?}
+  \label{How_do_automate_plot_generation_with_command_line_programs}
+
+  \latex is often used in conjunction with plotting programs that run on
+  the command line like \textprog{gri} or \textprog{gnuplot}.  Although
+  there is no direct support for these programs in \UseLATEX, it is
+  straightforward to use these programs.
+
+  One way to use a plotting program is simply to run it yourself to
+  generate the plot and then incorporate the image file into your \latex
+  document as you would any other image file (see
+  Section~\ref{sec:IncoporatingImages}).  This the easiest way to
+  incorporate these plots since it does not require additional CMake code.
+  It also ensures consistency of how the plot looks (often the plots will
+  look different if created on different platforms), and it provides the
+  opportunity to edit the image to make it look better for publication.
+
+  Another way to use these plotting programs is to automatically run them
+  when building the \latex document.  This is convenient if you frequently
+  change the data you are plotting or if you are creating many plots.  To
+  automate running the plotting program build one or more targets to
+  generate these files and then add these targets as \latex dependencies
+  (see Section~\ref{sec:IdentifyingDependentFiles} for information on
+  adding dependencies).  Here is an example of creating the targets for
+  converting a directory of \textprog{gri} files and incorporating the
+  resulting files in a \latex document.
+
+  \begin{CodeListing}
+# Set GRI executable
+SET(GRI_COMPILE "/usr/bin/gri")
+# Set the location of data files
+SET(DATA_DIR data)
+# Set the location of the directory for image files
+SET(IMAGE_DIR graphics)
+
+# Get a list of gri files
+FILE(GLOB_RECURSE GRI_FILES "*.gri")
+
+FOREACH(file ${GRI_FILES})
+  GET_FILENAME_COMPONENT(basename "${file}" NAME_WE)
+  # Replace stings in gri file so data files can be found
+  FILE(READ
+    ${CMAKE_CURRENT_SOURCE_DIR}/${IMAGE_DIR}/${basename}.gri
+    file_contents
+    )
+  STRING(REPLACE "${DATA_DIR}" "${IMAGE_DIR}/${DATA_DIR}"
+    changed_file_contents ${file_contents}
+    )
+  FILE(WRITE
+    ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
+    ${changed_file_contents}
+    )
+   
+  # Command to run gri   
+  IF(GRI_COMPILE)
+    ADD_CUSTOM_COMMAND(
+      OUTPUT
+        ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
+      DEPENDS
+        ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
+        ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${DATA_DIR}
+      COMMAND
+        ${GRI_COMPILE}  
+      ARGS
+        -output
+        ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
+        ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
+      )
+  ENDIF(GRI_COMPILE)
+  # Make a list of all gri files (for ADD_LATEX_DOCUMENT depend) 
+  SET(ALL_GRI_FILES ${ALL_GRI_FILES}
+    ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
+    )
+ENDFOREACH(file)
+
+# Copy over all data files needed to generate gri graphs
+ADD_CUSTOM_COMMAND(
+  OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${DATA_DIR}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${IMAGE_DIR}/${DATA_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${CMAKE_CURRENT_SOURCE_DIR}/${IMAGE_DIR}/${DATA_DIR}
+          ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${DATA_DIR}
+  )
+
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  IMAGE_DIRS ${IMAGE_DIR}
+  DEPENDS ${ALL_GRI_FILES}
+  )
+  \end{CodeListing}
+
   \subsection{Why does make stop after each image conversion?}
   \label{sec:Why_does_make_stop_after_each_image_conversion}
 
@@ -569,6 +659,7 @@ convert.exe: unable to open image `C:': Permission denied.
   Thanks to all of the following contributors.
 
   \begin{description}
+  \item[Arnout Boelens] Example of using gri in conjunction with \latex.
   \item[Alin Elena] Suggestions on removing dependence on makeglossaries
     command.
   \item[\O{}ystein S. Haaland] Support for making glossaries.
