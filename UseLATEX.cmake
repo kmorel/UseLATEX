@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.7.1
+# Version: 1.7.2
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -61,6 +61,9 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.7.2 Use ps2pdf to convert eps to pdf to get around the problem with
+#       ImageMagick dropping the bounding box (thanks to Lukasz Lis).
 #
 # 1.7.1 Fixed some dependency issues.
 #
@@ -381,6 +384,30 @@ MACRO(LATEX_GET_OUTPUT_PATH var)
   ENDIF (LATEX_OUTPUT_PATH)
 ENDMACRO(LATEX_GET_OUTPUT_PATH)
 
+MACRO(LATEX_ADD_CONVERT_COMMAND output_path input_path output_extension
+        input_extension flags)
+  SET (converter ${IMAGEMAGICK_CONVERT})
+  SET (convert_flags "")
+  # ImageMagick has broken eps to pdf conversion
+  # use ps2pdf instead
+  IF (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
+    IF (PS2PDF_CONVERTER)
+      SET (converter ${PS2PDF_CONVERTER})
+      SET (convert_flags "-dEPSCrop ${flags}")
+    ELSE (PS2PDF_CONVERTER)
+      MESSAGE(SEND_ERROR "Using postscript files with pdflatex requires ps2pdf for conversion.")
+    ENDIF (PS2PDF_CONVERTER)
+  ELSE (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
+    SET (convert_flags ${flags})
+  ENDIF (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
+
+  ADD_CUSTOM_COMMAND(OUTPUT ${output_path}
+    COMMAND ${converter}
+      ARGS ${convert_flags} ${input_path} ${output_path}
+    DEPENDS ${input_path}
+    )
+ENDMACRO(LATEX_ADD_CONVERT_COMMAND)
+
 # Makes custom commands to convert a file to a particular type.
 MACRO(LATEX_CONVERT_IMAGE output_files input_file output_extension convert_flags
     output_extensions other_files)
@@ -395,12 +422,9 @@ MACRO(LATEX_CONVERT_IMAGE output_files input_file output_extension convert_flags
   LATEX_LIST_CONTAINS(is_type ${extension} ${output_extensions})
   IF (is_type)
     IF (convert_flags)
-      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${output_file}
-        COMMAND ${IMAGEMAGICK_CONVERT}
-        ARGS ${input_dir}/${input_file} ${convert_flags}
-          ${output_dir}/${output_file}
-        DEPENDS ${input_dir}/${input_file}
-        )
+      LATEX_ADD_CONVERT_COMMAND(${output_dir}/${output_file}
+        ${input_dir}/${input_file} ${output_extension} ${extension}
+        "${convert_flags}")
       SET(${output_files} ${${output_files}} ${output_dir}/${output_file})
     ELSE (convert_flags)
       # As a shortcut, we can just copy the file.
@@ -425,12 +449,9 @@ MACRO(LATEX_CONVERT_IMAGE output_files input_file output_extension convert_flags
 
     # If we still need to convert, do it.
     IF (do_convert)
-      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${output_file}
-        COMMAND ${IMAGEMAGICK_CONVERT}
-        ARGS ${input_dir}/${input_file} ${convert_flags}
-          ${output_dir}/${output_file}
-        DEPENDS ${input_dir}/${input_file}
-        )
+      LATEX_ADD_CONVERT_COMMAND(${output_dir}/${output_file}
+        ${input_dir}/${input_file} ${output_extension} ${extension}
+        "${convert_flags}")
       SET(${output_files} ${${output_files}} ${output_dir}/${output_file})
     ENDIF (do_convert)
   ENDIF (is_type)

@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.7.1}
+\newcommand{\UseLATEXVersion}{1.7.2}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -222,25 +222,6 @@ ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
   Simply leave out the file extension in the file name argument to
   \textlatex|\includegraphics| and \latex will find the file with the
   appropriate extension for you.
-
-  One more note about vector graphics. Encapsulated postscript (eps) files
-  have a bounding box that is often lost when converting to pdf types. When
-  using eps files, it is best to search for a line starting with
-  \textcmake{\%\%BoundingBox:} such as
-
-  \begin{CodeListing}
-%%BoundingBox: 58 77 734 536
-  \end{CodeListing}
-  and then copy these numbers to the \textlatex|bb| option of the \latex
-  \textlatex|\includegraphics| command:
-  \begin{CodeListing}
-\includegraphics[width=\linewidth,bb=58 77 734 536]
-  \end{CodeListing}
-
-  This problem does not seem to occur when converting pdf files to eps.
-  Thus, I find it more convenient to create my vector graphics as pdf.
-  This, of course, is assuming that your program gives you enough control
-  over the pdf output to adjust the page size.
 
   \subsection{Create a PDF by Default}
   \label{sec:CreateAPDFByDefault}
@@ -591,6 +572,9 @@ convert.exe: unable to open image `C:': Permission denied.
   \item[Alin Elena] Suggestions on removing dependence on makeglossaries
     command.
   \item[\O{}ystein S. Haaland] Support for making glossaries.
+  \item[Lukasz Lis] Workaround for problem with ImageMagick dropping the
+    BoundingBox of eps files by using the \textprog{ps2pdf} program
+    instead.
   \item[Eric Noulard] Support for any file extension on \latex input files.
   \item[Theodore Papadopoulo] DEPENDS parameter for \ald and help in
     identifying some dependency issues.
