@@ -651,6 +651,44 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   was successful. The problem might also occur in other ImageMagick
   versions. Try updating your installation of ImageMagick.
 
+  \subsection{How do I resolve \textbackslash{}write 18 errors with \textlatexpackage{pstricks} or \textlatexpackage{pdftricks}?}
+  \label{sec:How_do_I_resolve_write_18_errors_with_pstricks_or_pdftricks}
+
+  A \textlatex|\write18| command is \latex's obtuse syntax for running a
+  command on your system.  Commands in the \textlatexpackage{pstricks} and
+  \textlatexpackage{pdftricks} packages may need to run commands on your
+  system to, for example, convert graphics from one format to another.
+
+  Unfortunately, allowing \latex to run commands on your system can be
+  considered a security issue.  Some versions of \latex such as \miktex
+  disable the feature by default.  Thus, in order to use packages that rely
+  on \textlatex|\write18|, you may have to enable the feature, typically
+  with a command line option.  For \miktex, this command line option is
+  \textcmake{--enable-write18}.
+
+  You can instruct \UseLATEX to pass any flag to \latex by adding it to the
+  \textcmakevar{LATEX\_COMPILER\_FLAGS} CMake variable.  One way to do this
+  is through the CMake GUI.  Simple go to the advanced variables, find
+  \textcmakevar{LATEX\_COMPILER\_FLAGS}, and add
+  \textcmake{--enable-write18} (or equivalent flag) to the list of
+  arguments.
+
+  You can also automatically add this flag by setting the flag in your
+  \textfile{CMakeLists.txt} file.  For example:
+
+  \begin{CodeListing}
+SET(LATEX_COMPILER_FLAGS
+  "-interaction=nonstopmode --enable-write18"
+  CACHE STRING "Flags passed to latex."
+  )
+INCLUDE(UseLATEX.cmake)
+  \end{CodeListing}
+
+  The disadvantage of this latter approach is the reduction of portability.
+  This addition could cause a failure for any \latex implementation that
+  does not support the \textcmake{--enable-write18} flag (for which there
+  are many).
+
   %-----------------------------------------------------------------------------
 
   
