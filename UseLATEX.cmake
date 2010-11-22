@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.7.2
+# Version: 1.7.3
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -61,6 +61,9 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.7.3 Fix some issues with interactions between makeglossaries and bibtex
+#       (thanks to Mark de Wever).
 #
 # 1.7.2 Use ps2pdf to convert eps to pdf to get around the problem with
 #       ImageMagick dropping the bounding box (thanks to Lukasz Lis).
@@ -636,6 +639,33 @@ MACRO(ADD_LATEX_TARGETS)
     SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
   ENDFOREACH(input)
 
+  IF (LATEX_USE_GLOSSARY)
+    FOREACH(dummy 0 1)   # Repeat these commands twice.
+      SET(make_dvi_command ${make_dvi_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=makeglossaries
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+        -P ${LATEX_USE_LATEX_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+        )
+      SET(make_pdf_command ${make_pdf_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=makeglossaries
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+        -P ${LATEX_USE_LATEX_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+        )
+    ENDFOREACH(dummy)
+  ENDIF (LATEX_USE_GLOSSARY)
+
   IF (LATEX_BIBFILES)
     SET(make_dvi_command ${make_dvi_command}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
@@ -661,31 +691,6 @@ MACRO(ADD_LATEX_TARGETS)
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
       ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
   ENDIF (LATEX_USE_INDEX)
-
-  IF (LATEX_USE_GLOSSARY)
-    SET(make_dvi_command ${make_dvi_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${CMAKE_COMMAND}
-      -D LATEX_BUILD_COMMAND=makeglossaries
-      -D LATEX_TARGET=${LATEX_TARGET}
-      -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
-      -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
-      -P ${LATEX_USE_LATEX_LOCATION}
-      )
-    SET(make_pdf_command ${make_pdf_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${CMAKE_COMMAND}
-      -D LATEX_BUILD_COMMAND=makeglossaries
-      -D LATEX_TARGET=${LATEX_TARGET}
-      -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
-      -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
-      -P ${LATEX_USE_LATEX_LOCATION}
-      )
-  ENDIF (LATEX_USE_GLOSSARY)
 
   SET(make_dvi_command ${make_dvi_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
