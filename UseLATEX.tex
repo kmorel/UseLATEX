@@ -225,6 +225,12 @@ ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
   \textlatex|\includegraphics| and \latex will find the file with the
   appropriate extension for you.
 
+  Note that in order to ensure that the resulting image files are placed in
+  the appropriate directory, you are required to give \emph{relative} paths
+  for images and image directories.  For example, \textcmake{IMAGE\_DIRS
+    \$\{CMAKE\_CURRENT\_SOURCE\_DIR\}/images} will fail.  Use
+  \textcmake{IMAGE\_DIRS images} instead.
+
   \subsection{Create a PDF by Default}
   \label{sec:CreateAPDFByDefault}
 

@@ -65,6 +65,9 @@
 #
 # 1.7.4 Added the DEFAULT_SAFEPDF option (thanks to Raymond Wan).
 #
+#       Added warnings when image directories are not found (and were
+#       probably not given relative to the source directory).
+#
 # 1.7.3 Fix some issues with interactions between makeglossaries and bibtex
 #       (thanks to Mark de Wever).
 #
@@ -499,7 +502,7 @@ MACRO(LATEX_PROCESS_IMAGES dvi_outputs pdf_outputs)
           "${LATEX_PDF_IMAGE_EXTENSIONS}" "${ARGN}")
       ENDIF (is_raster)
     ELSE (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
-      MESSAGE("Could not find file \"${CMAKE_CURRENT_SOURCE_DIR}/${file}\"")
+      MESSAGE(WARNING "Could not find file ${CMAKE_CURRENT_SOURCE_DIR}/${file}.  Are you sure you gave relative paths to IMAGES?")
     ENDIF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
   ENDFOREACH(file)
 ENDMACRO(LATEX_PROCESS_IMAGES)
@@ -616,6 +619,9 @@ MACRO(ADD_LATEX_TARGETS)
   # place them in LATEX_IMAGES.
   FOREACH(dir ${LATEX_IMAGE_DIRS})
     FOREACH(extension ${LATEX_IMAGE_EXTENSIONS})
+      IF (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir})
+        MESSAGE(WARNING "Image directory ${CMAKE_CURRENT_SOURCE_DIR}/${dir} does not exist.  Are you sure you gave relative directories to IMAGE_DIRS?")
+      ENDIF (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir})
       FILE(GLOB files ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*${extension})
       FOREACH(file ${files})
         GET_FILENAME_COMPONENT(filename ${file} NAME)
