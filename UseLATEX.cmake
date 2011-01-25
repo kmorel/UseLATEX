@@ -20,7 +20,8 @@
 #                       [CONFIGURE] <tex_files>
 #                       [DEPENDS] <tex_files>
 #                       [USE_INDEX] [USE_GLOSSARY]
-#                       [DEFAULT_PDF] [MANGLE_TARGET_NAMES])
+#                       [DEFAULT_PDF] [DEFAULT_SAFEPDF]
+#                       [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
@@ -61,6 +62,8 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.7.4 Added the DEFAULT_SAFEPDF option (thanks to Raymond Wan).
 #
 # 1.7.3 Fix some issues with interactions between makeglossaries and bibtex
 #       (thanks to Mark de Wever).
