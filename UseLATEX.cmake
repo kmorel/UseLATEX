@@ -554,7 +554,7 @@ ENDMACRO(LATEX_COPY_INPUT_FILE)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY] [DEFAULT_PDF] [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -565,7 +565,7 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
-    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;DEFAULT_PDF;MANGLE_TARGET_NAMES"
+    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;DEFAULT_PDF;DEFAULT_SAFEPDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -708,13 +708,13 @@ MACRO(ADD_LATEX_TARGETS)
     COMMAND ${make_dvi_command}
     DEPENDS ${make_dvi_depends}
     )
-  IF (LATEX_DEFAULT_PDF)
+  IF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
     ADD_CUSTOM_TARGET(${dvi_target}
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ELSE (LATEX_DEFAULT_PDF)
+  ELSE (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
     ADD_CUSTOM_TARGET(${dvi_target} ALL
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ENDIF (LATEX_DEFAULT_PDF)
+  ENDIF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
 
   # Add commands and targets for building pdf outputs (with pdflatex).
   IF (PDFLATEX_COMPILER)
@@ -742,10 +742,17 @@ MACRO(ADD_LATEX_TARGETS)
       # Since both the pdf and safepdf targets have the same output, we
       # cannot properly do the dependencies for both.  When selecting safepdf,
       # simply force a recompile every time.
-      ADD_CUSTOM_TARGET(${safepdf_target}
-        ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
-        )
+      IF (LATEX_DEFAULT_SAFEPDF)
+        ADD_CUSTOM_TARGET(${safepdf_target} ALL
+          ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
+          )
+      ELSE (LATEX_DEFAULT_SAFEPDF)
+        ADD_CUSTOM_TARGET(${safepdf_target}
+          ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
+          )
+      ENDIF (LATEX_DEFAULT_SAFEPDF)
       ADD_DEPENDENCIES(${safepdf_target} ${ps_target})
     ENDIF (PS2PDF_CONVERTER)
   ENDIF (DVIPS_CONVERTER)
