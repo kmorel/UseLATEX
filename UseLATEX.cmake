@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.7.4
+# Version: 1.7.5
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -62,6 +62,9 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.7.5: Fix issue with bibfiles being copied two different ways, which causes
+#       Problems with dependencies (thanks to Edwin van Leeuwen).
 #
 # 1.7.4 Added the DEFAULT_SAFEPDF option (thanks to Raymond Wan).
 #
@@ -787,14 +790,7 @@ MACRO(ADD_LATEX_DOCUMENT)
     LATEX_COPY_INPUT_FILE(${LATEX_MAIN_INPUT})
 
     FOREACH (bib_file ${LATEX_BIBFILES})
-      CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
-        ${output_dir}/${bib_file}
-        COPYONLY)
-      ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/${bib_file}
-        COMMAND ${CMAKE_COMMAND}
-        ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${bib_file} ${output_dir}/${bib_file}
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${bib_file}
-        )
+      LATEX_COPY_INPUT_FILE(${bib_file})
     ENDFOREACH (bib_file)
 
     FOREACH (input ${LATEX_INPUTS})
