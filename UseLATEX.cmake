@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.7.5
+# Version: 1.7.6
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -62,6 +62,8 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.7.6: Add support for the nomencl package (thanks to Myles English).
 #
 # 1.7.5: Fix issue with bibfiles being copied two different ways, which causes
 #       Problems with dependencies (thanks to Edwin van Leeuwen).
