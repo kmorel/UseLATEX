@@ -272,6 +272,31 @@ MACRO(LATEX_MAKEGLOSSARIES)
   ENDFOREACH(newglossary)
 ENDMACRO(LATEX_MAKEGLOSSARIES)
 
+MACRO(LATEX_MAKENOMENCLATURES)
+  MESSAGE("**************************** In makenomenclatures")
+  IF (NOT LATEX_TARGET)
+    MESSAGE(SEND_ERROR "Need to define LATEX_TARGET")
+  ENDIF (NOT LATEX_TARGET)
+
+  IF (NOT MAKEINDEX_COMPILER)
+    MESSAGE(SEND_ERROR "Need to define MAKEINDEX_COMPILER")
+  ENDIF (NOT MAKEINDEX_COMPILER)
+
+  SET(aux_file ${LATEX_TARGET}.aux)
+
+  IF (NOT EXISTS ${aux_file})
+    MESSAGE(SEND_ERROR "${aux_file} does not exist.  Run latex on
+your target file.")
+  ENDIF (NOT EXISTS ${aux_file})
+
+  SET(nomencl_out ${LATEX_TARGET}.nls)
+  SET(nomencl_in ${LATEX_TARGET}.nlo)
+
+  EXEC_PROGRAM(${MAKEINDEX_COMPILER} ARGS ${MAKENOMENCLATURES_COMPILER_FLAGS}
+    ${nomencl_in} -s "nomencl.ist" -o ${nomencl_out}
+    )
+ENDMACRO(LATEX_MAKENOMENCLATURES)
+
 #############################################################################
 # Helper macros for establishing LaTeX build.
 #############################################################################
@@ -323,6 +348,8 @@ MACRO(LATEX_SETUP_VARIABLES)
     CACHE STRING "Flags passed to makeindex.")
   SET(MAKEGLOSSARIES_COMPILER_FLAGS ""
     CACHE STRING "Flags passed to makeglossaries.")
+  SET(MAKENOMENCLATURES_COMPILER_FLAGS ""
+    CACHE STRING "Flags passed to makenomenclatures.")
   SET(DVIPS_CONVERTER_FLAGS "-Ppdf -G0 -t letter"
     CACHE STRING "Flags passed to dvips.")
   SET(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
@@ -335,6 +362,7 @@ MACRO(LATEX_SETUP_VARIABLES)
     BIBTEX_COMPILER_FLAGS
     MAKEINDEX_COMPILER_FLAGS
     MAKEGLOSSARIES_COMPILER_FLAGS
+    MAKENOMENCLATURES_COMPILER_FLAGS
     DVIPS_CONVERTER_FLAGS
     PS2PDF_CONVERTER_FLAGS
     LATEX2HTML_CONVERTER_FLAGS
@@ -344,6 +372,7 @@ MACRO(LATEX_SETUP_VARIABLES)
   SEPARATE_ARGUMENTS(BIBTEX_COMPILER_FLAGS)
   SEPARATE_ARGUMENTS(MAKEINDEX_COMPILER_FLAGS)
   SEPARATE_ARGUMENTS(MAKEGLOSSARIES_COMPILER_FLAGS)
+  SEPARATE_ARGUMENTS(MAKENOMENCLATURES_COMPILER_FLAGS)
   SEPARATE_ARGUMENTS(DVIPS_CONVERTER_FLAGS)
   SEPARATE_ARGUMENTS(PS2PDF_CONVERTER_FLAGS)
   SEPARATE_ARGUMENTS(LATEX2HTML_CONVERTER_FLAGS)
@@ -563,7 +592,7 @@ ENDMACRO(LATEX_COPY_INPUT_FILE)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCLATURE]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
@@ -574,7 +603,7 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
-    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;DEFAULT_PDF;DEFAULT_SAFEPDF;MANGLE_TARGET_NAMES"
+    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;USE_NOMENCLATURE;USE_NOMENCLATURES;DEFAULT_PDF;DEFAULT_SAFEPDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -595,6 +624,9 @@ MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   IF (LATEX_USE_GLOSSARIES)
     SET(LATEX_USE_GLOSSARY TRUE)
   ENDIF (LATEX_USE_GLOSSARIES)
+  IF (LATEX_USE_NOMENCLATURES)
+    SET(LATEX_USE_NOMENCLATURE TRUE)
+  ENDIF (LATEX_USE_NOMENCLATURES)
 ENDMACRO(PARSE_ADD_LATEX_ARGUMENTS)
 
 MACRO(ADD_LATEX_TARGETS)
@@ -677,6 +709,33 @@ MACRO(ADD_LATEX_TARGETS)
         )
     ENDFOREACH(dummy)
   ENDIF (LATEX_USE_GLOSSARY)
+
+  IF (LATEX_USE_NOMENCLATURE)
+    FOREACH(dummy 0 1)   # Repeat these commands twice.
+      SET(make_dvi_command ${make_dvi_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=makenomenclatures
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D MAKENOMENCLATURES_COMPILER_FLAGS=${MAKENOMENCLATURES_COMPILER_FLAGS}
+        -P ${LATEX_USE_LATEX_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+        )
+      SET(make_pdf_command ${make_pdf_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=makenomenclatures
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D MAKENOMENCLATURES_COMPILER_FLAGS=${MAKENOMENCLATURES_COMPILER_FLAGS}
+        -P ${LATEX_USE_LATEX_LOCATION}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${LATEX_MAIN_INPUT}
+        )
+    ENDFOREACH(dummy)
+  ENDIF (LATEX_USE_NOMENCLATURE)
 
   IF (LATEX_BIBFILES)
     SET(make_dvi_command ${make_dvi_command}
@@ -817,6 +876,11 @@ IF (LATEX_BUILD_COMMAND)
     LATEX_MAKEGLOSSARIES()
     SET(command_handled TRUE)
   ENDIF ("${LATEX_BUILD_COMMAND}" STREQUAL makeglossaries)
+
+  IF ("${LATEX_BUILD_COMMAND}" STREQUAL makenomenclatures)
+    LATEX_MAKENOMENCLATURES()
+    SET(command_handled TRUE)
+  ENDIF ("${LATEX_BUILD_COMMAND}" STREQUAL makenomenclatures)
 
   IF (NOT command_handled)
     MESSAGE(SEND_ERROR "Unknown command: ${LATEX_BUILD_COMMAND}")
