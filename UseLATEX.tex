@@ -326,6 +326,38 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
 		   USE_GLOSSARY)
   \end{CodeListing}
 
+  \subsection{Nomenclature Support}
+  \label{sec:NomenclatureSupport}
+
+  The \textlatexpackage{nomencl} package provides a mechanism to collect
+  nomenclature and print it together in a single section.  The
+  \textlatexpackage{nomencl} behaves very similarly to
+  \textlatexpackage{glossaries} (described in
+  Section~\ref{sec:MakingAGlossary}) including running the
+  \textprog{makeindex} command.  However, the arguments to
+  \textprog{makeindex} are a bit different (to avoid clashes with creating
+  glossaries), and unfortunately \textlatexpackage{nomencl} provides no
+  hints in the auxiliary file about it.  Thus, \UseLATEX provides a special
+  \textcmake{USE\_NOMENCL} option to \ald to add the necessary commands to
+  build the nomenclature.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
+                   IMAGE_DIRS images
+		   USE_NOMENCL)
+  \end{CodeListing}
+
+  It should be noted that this feature only works with
+  \textlatexpackage{nomencl} version 4.0 or later.  The
+  \textlatexpackage{nomencl} package changed how \textprog{makeindex} is
+  called to make it compatible with indices and glossaries.  The correct
+  version of \textlatexpackage{nomencl} is easily identified as the one
+  that uses the \textlatex|\makenomenclature| and
+  \textlatex|\printnomenclature| commands (as opposed to the old
+  \textlatex|\makeglossary| and \textlatex|\printglossary| commands).  If
+  you are using an older version of \textlatexpackage{nomencl}, you are
+  best off update for a number of reasons.
+
   \subsection{Multipart \latex Files}
   \label{sec:MultipartLatexFiles}
 
@@ -721,6 +753,7 @@ INCLUDE(UseLATEX.cmake)
     \textprog{makeglossaries} and \bibtex commands.
   \item[Alin Elena] Suggestions on removing dependence on makeglossaries
     command.
+  \item[Myles English] Support for the \textlatexpackage{nomencl} package. 
   \item[\O{}ystein S. Haaland] Support for making glossaries.
   \item[Thimo Langbehn] Support for pstricks with the
     \textcmake{--enable-write18} option.
