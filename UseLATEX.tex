@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.7.6}
+\newcommand{\UseLATEXVersion}{1.7.7}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -313,12 +313,14 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   There are multiple ways to make a glossary in a \latex document, but the
   \textlatexpackage{glossaries} package provides one of the most convenient
   ways of doing so.  Like the \textlatexpackage{makeidx} package,
-  \textlatexpackage{glossaries} requires running \textprog{makeindex} for
-  building auxiliary files.  However, building the glossary files can be
-  more complicated as there can be different sets of glossary files with
-  different extensions.  \UseLATEX will handle that for you.  Simply add
-  the \textcmake{USE\_GLOSSARY} option anywhere in the \ald arguments, and
-  the glossary creating will be handled for you.
+  \textlatexpackage{glossaries} requires running \textprog{makeindex} or
+  \textprog{xindy} for building auxiliary files.  However, building the
+  glossary files can be more complicated as there can be different sets of
+  glossary files with different extensions.  \UseLATEX will handle that for
+  you.  It does it in a way similar to the \textprog{makeglossary} command,
+  but in a more portable way.  Simply add the \textcmake{USE\_GLOSSARY}
+  option anywhere in the \ald arguments, and the glossary creating will be
+  handled for you.
 
   \begin{CodeListing}
 ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
@@ -356,7 +358,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   \textlatex|\printnomenclature| commands (as opposed to the old
   \textlatex|\makeglossary| and \textlatex|\printglossary| commands).  If
   you are using an older version of \textlatexpackage{nomencl}, you are
-  best off update for a number of reasons.
+  best off to update for a number of reasons.
 
   \subsection{Multipart \latex Files}
   \label{sec:MultipartLatexFiles}

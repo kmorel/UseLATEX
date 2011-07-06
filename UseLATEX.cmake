@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.7.6
+# Version: 1.7.7
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -63,9 +63,11 @@
 #
 # History:
 #
-# 1.7.6: Add support for the nomencl package (thanks to Myles English).
+# 1.7.7 Support calling xindy when making glossaries.
 #
-# 1.7.5: Fix issue with bibfiles being copied two different ways, which causes
+# 1.7.6 Add support for the nomencl package (thanks to Myles English).
+#
+# 1.7.5 Fix issue with bibfiles being copied two different ways, which causes
 #       Problems with dependencies (thanks to Edwin van Leeuwen).
 #
 # 1.7.4 Added the DEFAULT_SAFEPDF option (thanks to Raymond Wan).
@@ -222,14 +224,12 @@ ENDMACRO(LATEX_FILE_MATCH)
 # Macros that perform processing during a LaTeX build.
 #############################################################################
 MACRO(LATEX_MAKEGLOSSARIES)
+  # This is really a bare bones port of the makeglossaries perl script into
+  # CMake scripting.
   MESSAGE("**************************** In makeglossaries")
   IF (NOT LATEX_TARGET)
     MESSAGE(SEND_ERROR "Need to define LATEX_TARGET")
   ENDIF (NOT LATEX_TARGET)
-
-  IF (NOT MAKEINDEX_COMPILER)
-    MESSAGE(SEND_ERROR "Need to define MAKEINDEX_COMPILER")
-  ENDIF (NOT MAKEINDEX_COMPILER)
 
   SET(aux_file ${LATEX_TARGET}.aux)
 
@@ -250,6 +250,19 @@ MACRO(LATEX_MAKEGLOSSARIES)
     istfile ${istfile_line}
     )
 
+  STRING(REGEX MATCH ".*\\.xdy" use_xindy "${istfile}")
+  IF (use_xindy)
+    MESSAGE("*************** Using xindy")
+    IF (NOT XINDY_COMPILER)
+      MESSAGE(SEND_ERROR "Need to define XINDY_COMPILER")
+    ENDIF (NOT XINDY_COMPILER)
+  ELSE (use_xindy)
+    MESSAGE("*************** Using makeindex")
+    IF (NOT MAKEINDEX_COMPILER)
+      MESSAGE(SEND_ERROR "Need to define MAKEINDEX_COMPILER")
+    ENDIF (NOT MAKEINDEX_COMPILER)
+  ENDIF (use_xindy)
+
   FOREACH(newglossary ${newglossary_lines})
     STRING(REGEX REPLACE
       "@newglossary[ \t]*{([^}]*)}{([^}]*)}{([^}]*)}{([^}]*)}"
@@ -267,10 +280,107 @@ MACRO(LATEX_MAKEGLOSSARIES)
       "@newglossary[ \t]*{([^}]*)}{([^}]*)}{([^}]*)}{([^}]*)}"
       "${LATEX_TARGET}.\\4" glossary_in ${newglossary}
       )
-    MESSAGE("${MAKEINDEX_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}")
-    EXEC_PROGRAM(${MAKEINDEX_COMPILER} ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
-      -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}
-      )
+
+    IF (use_xindy)
+      LATEX_FILE_MATCH(xdylanguage_line ${aux_file}
+        "@xdylanguage[ \t]*{${glossary_name}}{([^}]*)}"
+        "@xdylanguage{${glossary_name}}{english}"
+        )
+      STRING(REGEX REPLACE
+        "@xdylanguage[ \t]*{${glossary_name}}{([^}]*)}"
+        "\\1"
+        language
+        ${xdylanguage_line}
+        )
+      # What crazy person makes a LaTeX index generater that uses different
+      # identifiers for language than babel (or at least does not support
+      # the old ones)?
+      IF (${language} STREQUAL "frenchb")
+        SET(language "french")
+      ELSEIF (${language} MATCHES "^n?germanb?$")
+        SET(language "german")
+      ELSEIF (${language} STREQUAL "magyar")
+        SET(language "hungarian")
+      ELSEIF (${language} STREQUAL "lsorbian")
+        SET(language "lower-sorbian")
+      ELSEIF (${language} STREQUAL "norsk")
+        SET(language "norwegian")
+      ELSEIF (${language} STREQUAL "portuges")
+        SET(language "portuguese")
+      ELSEIF (${language} STREQUAL "russianb")
+        SET(language "russian")
+      ELSEIF (${language} STREQUAL "slovene")
+        SET(language "slovenian")
+      ELSEIF (${language} STREQUAL "ukraineb")
+        SET(language "ukrainian")
+      ELSEIF (${language} STREQUAL "usorbian")
+        SET(language "upper-sorbian")
+      ENDIF (${language} STREQUAL "frenchb")
+      IF (language)
+        SET(language_flags "-L ${language}")
+      ELSE (language)
+        SET(language_flags "")
+      ENDIF (language)
+
+      LATEX_FILE_MATCH(codepage_line ${aux_file}
+        "@gls@codepage[ \t]*{${glossary_name}}{([^}]*)}"
+        "@gls@codepage{${glossary_name}}{utf}"
+        )
+      STRING(REGEX REPLACE
+        "@gls@codepage[ \t]*{${glossary_name}}{([^}]*)}"
+        "\\1"
+        codepage
+        ${codepage_line}
+        )
+      IF (codepage)
+        SET(codepage_flags "-C ${codepage}")
+      ELSE (codepage)
+        # Ideally, we would check that the language is compatible with the
+        # default codepage, but I'm hoping that distributions will be smart
+        # enough to specify their own codepage.  I know, it's asking a lot.
+        SET(codepage_flags "")
+      ENDIF (codepage)
+
+      MESSAGE("${XINDY_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} ${language_flags} ${codepage_flags} -I xindy -M ${glossary_name} -t ${glossary_log} -o ${glossary_out} ${glossary_in}"
+        )
+      EXEC_PROGRAM(${XINDY_COMPILER}
+        ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+          ${language_flags}
+          ${codepage_flags}
+          -I xindy
+          -M ${glossary_name}
+          -t ${glossary_log}
+          -o ${glossary_out}
+          ${glossary_in}
+        OUTPUT_VARIABLE xindy_output
+        )
+      MESSAGE("${xindy_output}")
+
+      # So, it is possible (perhaps common?) for aux files to specify a
+      # language and codepage that are incompatible with each other.  Check
+      # for that condition, and if it happens run again with the default
+      # codepage.
+      IF ("${xindy_output}" MATCHES "^Cannot locate xindy module for language (.+) in codepage (.+)\\.$")
+        MESSAGE("*************** Retrying xindy with default codepage.")
+        EXEC_PROGRAM(${XINDY_COMPILER}
+          ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+            ${language_flags}
+            -I xindy
+            -M ${glossary_name}
+            -t ${glossary_log}
+            -o ${glossary_out}
+            ${glossary_in}
+          )
+      ENDIF ("${xindy_output}" MATCHES "^Cannot locate xindy module for language (.+) in codepage (.+)\\.$")
+      #ENDIF ("${xindy_output}" MATCHES "Cannot locate xindy module for language (.+) in codepage (.+)\\.")
+      
+    ELSE (use_xindy)
+      MESSAGE("${MAKEINDEX_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}")
+      EXEC_PROGRAM(${MAKEINDEX_COMPILER} ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+        -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}
+        )
+    ENDIF (use_xindy)
+
   ENDFOREACH(newglossary)
 ENDMACRO(LATEX_MAKEGLOSSARIES)
 
@@ -315,11 +425,17 @@ MACRO(LATEX_SETUP_VARIABLES)
 
   FIND_PACKAGE(LATEX)
 
+  FIND_PROGRAM(XINDY_COMPILER
+    NAME xindy
+    PATHS ${MIKTEX_BINARY_PATH} /usr/bin
+    )
+
   MARK_AS_ADVANCED(CLEAR
     LATEX_COMPILER
     PDFLATEX_COMPILER
     BIBTEX_COMPILER
     MAKEINDEX_COMPILER
+    XINDY_COMPILER
     DVIPS_CONVERTER
     PS2PDF_CONVERTER
     LATEX2HTML_CONVERTER
@@ -683,6 +799,7 @@ MACRO(ADD_LATEX_TARGETS)
         -D LATEX_BUILD_COMMAND=makeglossaries
         -D LATEX_TARGET=${LATEX_TARGET}
         -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D XINDY_COMPILER=${XINDY_COMPILER}
         -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
         -P ${LATEX_USE_LATEX_LOCATION}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
@@ -694,6 +811,7 @@ MACRO(ADD_LATEX_TARGETS)
         -D LATEX_BUILD_COMMAND=makeglossaries
         -D LATEX_TARGET=${LATEX_TARGET}
         -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
+        -D XINDY_COMPILER=${XINDY_COMPILER}
         -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
         -P ${LATEX_USE_LATEX_LOCATION}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
