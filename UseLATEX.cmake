@@ -47,8 +47,11 @@
 #                       on images.
 #               ps: Makes <name>.ps
 #               html: Makes <name>.html
-#               auxclean: Deletes <name>.aux.  This is sometimes necessary
-#                       if a LaTeX error occurs and writes a bad aux file.
+#               auxclean: Deletes <name>.aux and other auxiliary files.
+#                       This is sometimes necessary if a LaTeX error occurs
+#                       and writes a bad aux file.  Unlike the regular clean
+#                       target, it does not delete other input files, such as
+#                       converted images, to save time on the rebuild.
 #
 #       The dvi target is added to the ALL.  That is, it will be the target
 #       built by default.  If the DEFAULT_PDF argument is given, then the
@@ -64,6 +67,8 @@
 # History:
 #
 # 1.7.7 Support calling xindy when making glossaries.
+#
+#       Improved make clean support.
 #
 # 1.7.6 Add support for the nomencl package (thanks to Myles English).
 #
@@ -758,6 +763,29 @@ MACRO(ADD_LATEX_TARGETS)
     SET(auxclean_target auxclean)
   ENDIF (LATEX_MANGLE_TARGET_NAMES)
 
+  # Probably not all of these will be generated, but they could be.
+  # Note that the aux file is added later.
+  SET(auxiliary_clean_files
+    ${output_dir}/${LATEX_TARGET}.bbl
+    ${output_dir}/${LATEX_TARGET}.blg
+    ${output_dir}/${LATEX_TARGET}-blx.bib
+    ${output_dir}/${LATEX_TARGET}.glg
+    ${output_dir}/${LATEX_TARGET}.glo
+    ${output_dir}/${LATEX_TARGET}.gls
+    ${output_dir}/${LATEX_TARGET}.idx
+    ${output_dir}/${LATEX_TARGET}.ilg
+    ${output_dir}/${LATEX_TARGET}.ind
+    ${output_dir}/${LATEX_TARGET}.ist
+    ${output_dir}/${LATEX_TARGET}.log
+    ${output_dir}/${LATEX_TARGET}.out
+    ${output_dir}/${LATEX_TARGET}.toc
+    ${output_dir}/${LATEX_TARGET}.lof
+    ${output_dir}/${LATEX_TARGET}.xdy
+    ${output_dir}/${LATEX_TARGET}.dvi
+    ${output_dir}/${LATEX_TARGET}.ps
+    ${output_dir}/${LATEX_TARGET}.pdf
+    )
+
   # For each directory in LATEX_IMAGE_DIRS, glob all the image files and
   # place them in LATEX_IMAGES.
   FOREACH(dir ${LATEX_IMAGE_DIRS})
@@ -789,6 +817,13 @@ MACRO(ADD_LATEX_TARGETS)
   FOREACH(input ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
     SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
     SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
+    IF (${input} MATCHES "\\.tex$")
+      STRING(REGEX REPLACE "\\.tex$" "" input_we ${input})
+      SET(auxiliary_clean_files ${auxiliary_clean_files}
+        ${output_dir}/${input_we}.aux
+        ${output_dir}/${input}.aux
+        )
+    ENDIF (${input} MATCHES "\\.tex$")
   ENDFOREACH(input)
 
   IF (LATEX_USE_GLOSSARY)
@@ -946,8 +981,13 @@ MACRO(ADD_LATEX_TARGETS)
     ADD_DEPENDENCIES(${html_target} ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
   ENDIF (LATEX2HTML_CONVERTER)
 
+  SET_DIRECTORY_PROPERTIES(.
+    ADDITIONAL_MAKE_CLEAN_FILES "${auxiliary_clean_files}"
+    )
+
   ADD_CUSTOM_TARGET(${auxclean_target}
-    ${CMAKE_COMMAND} -E remove ${output_dir}/${LATEX_TARGET}.aux ${output_dir}/${LATEX_TARGET}.idx ${output_dir}/${LATEX_TARGET}.ind
+    COMMENT "Cleaning auxiliary LaTeX files."
+    COMMAND ${CMAKE_COMMAND} -E remove ${auxiliary_clean_files}
     )
 ENDMACRO(ADD_LATEX_TARGETS)
 

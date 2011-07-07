@@ -124,6 +124,14 @@ ADD_LATEX_DOCUMENT(MyDoc.tex)
       \textcmakevar{PS2PDF\_CONVERTER} CMake variable to be set.
     \item[\textmaketarget{html}] Creates html pages. Requires the
       \textcmakevar{LATEX2HTML\_CONVERTER} CMake variable to be set.
+    \item[\textmaketarget{clean}] To CMake's default \textmaketarget{clean}
+      target, the numerous files that \latex often generates are added.
+    \item[\textmaketarget{auxclean}] Deletes the auxiliary files from
+      \latex, but not the generated input files.  Sometimes \latex gets
+      itself in a bad state where the auxiliary files need to be deleted to
+      successfully build again, and this target does that without also
+      deleting other build files (such as converted image files or files
+      from unrelated targets in the same directory).
   \end{description}
 
   One caveat about using \UseLATEX is that you are required to do an
@@ -243,7 +251,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
   \begin{CodeListing}
 ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
                    IMAGE_DIRS images
-		   DEFAULT_PDF)
+                   DEFAULT_PDF)
   \end{CodeListing}
 
   If you still want to use the \textprog{latex} program to compile your
@@ -254,7 +262,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   \begin{CodeListing}
 ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
                    IMAGE_DIRS images
-		   DEFAULT_SAFEPDF)
+                   DEFAULT_SAFEPDF)
   \end{CodeListing}
 
   \subsection{Building Multiple \latex Documents}
@@ -304,7 +312,7 @@ ADD_DEPENDENCIES(MyDoc1_ps MyDoc2_ps)
   \begin{CodeListing}
 ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
                    IMAGE_DIRS images
-		   USE_INDEX)
+                   USE_INDEX)
   \end{CodeListing}
 
   \subsection{Making a Glossary}
@@ -325,7 +333,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   \begin{CodeListing}
 ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
                    IMAGE_DIRS images
-		   USE_GLOSSARY)
+                   USE_GLOSSARY)
   \end{CodeListing}
 
   \subsection{Nomenclature Support}
@@ -346,7 +354,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   \begin{CodeListing}
 ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
                    IMAGE_DIRS images
-		   USE_NOMENCL)
+                   USE_NOMENCL)
   \end{CodeListing}
 
   It should be noted that this feature only works with
