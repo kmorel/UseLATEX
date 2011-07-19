@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.7.7}
+\newcommand{\UseLATEXVersion}{1.8.0}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -32,6 +32,7 @@
 \newcommand*{\latex}{\LaTeX\xspace}
 \newcommand*{\bibtex}{\textsc{Bib}\TeX\xspace}
 \newcommand*{\miktex}{Mik\TeX\xspace}
+\renewcommand*{\synctex}{SyncTeX\xspace}
 \newcommand*{\ald}{\textcmake{ADD\_LATEX\_DOCUMENT}\xspace}
 
 % Environments for listing CMake and other types of code.
@@ -141,7 +142,8 @@ ADD_LATEX_DOCUMENT(MyDoc.tex)
   can only be maintained if everything is copied to a separate directory
   structure.  For more details and hints on workarounds, see the
   ``\hyperref[sec:Why_does_UseLATEX_have_to_copy_my_tex_files]{Why does
-    \UseLATEX have to copy my tex files?}'' frequently asked question.
+    \UseLATEX have to copy my tex files?}'' frequently asked question in
+  Section~\ref{sec:Why_does_UseLATEX_have_to_copy_my_tex_files}.
 
   \subsection{Using a Bibliography}
   \label{sec:UsingABibliography}
@@ -264,6 +266,35 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
                    IMAGE_DIRS images
                    DEFAULT_SAFEPDF)
   \end{CodeListing}
+
+  \subsection{\synctex-Enabled Editors}
+  \label{sec:SynctexEnabledEditors}
+
+  Some implementations of \latex compilers have a feature called \synctex
+  that allows an editor or viewer to link between the compiled version of
+  the document (such as a pdf) and the original \latex source code.  The
+  most common way to do this is to add \textprog{-synctex=1} to the
+  \textprog{pdflatex} command.  This will create a file named
+  \textfile{\emph{$\langle$base-name$\rangle$}.synctex.gz} where each part
+  of the final document points to the original \latex files.
+
+  However, there is a problem.  \UseLATEX copies all of the input \latex
+  source files to an out-of-source build directory (see
+  Section~\ref{sec:Why_does_UseLATEX_have_to_copy_my_tex_files} for more
+  information on why).  But the \latex compiler does not know that.  Thus,
+  the created \textfile{\emph{$\langle$base-name$\rangle$}.synctex.gz} will
+  point to the temporary files in the build directory rather than your
+  original source files.
+
+  \UseLATEX can add commands to the make targets that ``correct'' the
+  \textfile{\emph{$\langle$base-name$\rangle$}.synctex.gz}.  To add these
+  commands, simply turn on the \textcmakevar{LATEX\_USE\_SYNCTEX} in
+  \textprog{ccmake} or equivalent CMake configuring tool.  When this option
+  is on, the \textprog{-synctex=1} argument is added to the \latex compile
+  commands (settable with the \textcmakevar{LATEX\_SYNCTEX\_FLAGS}
+  variable) and a command is added to targets that will find files in
+  \textfile{\emph{$\langle$base-name$\rangle$}.synctex.gz} and change their
+  paths to the original files in the source directory.
 
   \subsection{Building Multiple \latex Documents}
   \label{sec:BuldingMultipleLatexDocuments}
@@ -765,6 +796,7 @@ INCLUDE(UseLATEX.cmake)
     command.
   \item[Myles English] Support for the \textlatexpackage{nomencl} package. 
   \item[\O{}ystein S. Haaland] Support for making glossaries.
+  \item[Sven Klomp] Help with \synctex support.
   \item[Thimo Langbehn] Support for pstricks with the
     \textcmake{--enable-write18} option.
   \item[Edwin van Leeuwen] Fix for a bug when copying \bibtex files.
