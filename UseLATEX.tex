@@ -32,7 +32,11 @@
 \newcommand*{\latex}{\LaTeX\xspace}
 \newcommand*{\bibtex}{\textsc{Bib}\TeX\xspace}
 \newcommand*{\miktex}{Mik\TeX\xspace}
-\renewcommand*{\synctex}{SyncTeX\xspace}
+\ifdefined\synctex
+  \renewcommand*{\synctex}{SyncTeX\xspace}
+\else
+  \newcommand*{\synctex}{SyncTeX\xspace}
+\fi
 \newcommand*{\ald}{\textcmake{ADD\_LATEX\_DOCUMENT}\xspace}
 
 % Environments for listing CMake and other types of code.
