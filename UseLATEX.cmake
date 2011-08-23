@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.8.0
+# Version: 1.8.1
 # Author: Kenneth Moreland (kmorel at sandia dot gov)
 #
 # Copyright 2004 Sandia Corporation.
@@ -65,6 +65,8 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.8.1 Fix problem where ps2pdf was not getting the appropriate arguments.
 #
 # 1.8.0 Add support for synctex.
 #
@@ -621,7 +623,7 @@ MACRO(LATEX_ADD_CONVERT_COMMAND output_path input_path output_extension
   IF (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
     IF (PS2PDF_CONVERTER)
       SET (converter ${PS2PDF_CONVERTER})
-      SET (convert_flags "-dEPSCrop ${flags}")
+      SET (convert_flags -dEPSCrop ${PS2PDF_CONVERTER_FLAGS})
     ELSE (PS2PDF_CONVERTER)
       MESSAGE(SEND_ERROR "Using postscript files with pdflatex requires ps2pdf for conversion.")
     ENDIF (PS2PDF_CONVERTER)
