@@ -222,9 +222,12 @@ ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
 
   Once you establish the images directory, CMake will automatically find
   all files with known image extensions (currently eps, pdf, png, jpeg, and
-  jpg) in it and add makefile targets to use ImageMagick's convert to
-  convert the file times to those appropriate for the build. If you do not
-  have ImageMagick, you can get it for free from
+  jpg) in it and add makefile targets to use ImageMagick's
+  \textprog{convert} to convert the file times to those appropriate for the
+  build. (One exception is that \textprog{ps2pdf} will be used when
+  converting eps to pdf to get around a problem where ImageMagick drops the
+  bounding box information.)  If you do not have ImageMagick, you can get
+  it for free from
   \href{http://www.imagemagick.org}{http://www.imagemagick.org}. CMake will
   also give you a \textcmakevar{LATEX\_SMALL\_IMAGES} option that, when on,
   will downsample raster images. This can help speed up building and
@@ -536,9 +539,9 @@ ADD_LATEX_DOCUMENT(MyDoc.tex DEPENDS generated_file.tex)
   Section~\ref{sec:Why_is_convert_failing_on_Windows}.}
 
   Also be aware that if you have images in your document, there are
-  numerous problems that can occur on Windows with the ImageMagick convert
-  program. See Section~\ref{sec:Why_is_convert_failing_on_Windows} for more
-  information.
+  numerous problems that can occur on Windows with the ImageMagick
+  \textprog{convert} program. See
+  Section~\ref{sec:Why_is_convert_failing_on_Windows} for more information.
 
   \subsection{How do I process \latex files on Mac OS X?}
   \label{sec:How_do_I_process_latex_files_on_Mac_OS_X}
@@ -604,7 +607,7 @@ CMake Error at UseLATEX.cmake:377 (MESSAGE):
   version of ImageMagick (as specified in
   Section~\ref{sec:How_do_I_process_latex_files_on_Windows}), there are several
   other problems that users can run into the created build files attempt to
-  run the convert program.
+  run the \textprog{convert} program.
 
   A common error seen is 
 
