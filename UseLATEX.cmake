@@ -1,7 +1,7 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.8.1
-# Author: Kenneth Moreland (kmorel at sandia dot gov)
+# Version: 1.8.2
+# Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -65,6 +65,11 @@
 #       is given, then commands to build a glossary are made.
 #
 # History:
+#
+# 1.8.2 Fix corner case when an argument name was also a variable containing
+#       the text of an argument.  In this case, the CMake IF was matching
+#       the argument text with the contents of the variable with the same
+#       argument name.
 #
 # 1.8.1 Fix problem where ps2pdf was not getting the appropriate arguments.
 #
@@ -180,9 +185,9 @@ ENDMACRO(LATEX_CDR)
 MACRO(LATEX_LIST_CONTAINS var value)
   SET(${var})
   FOREACH (value2 ${ARGN})
-    IF (${value} STREQUAL ${value2})
+    IF ("not_a_var_${value}" STREQUAL "not_a_var_${value2}")
       SET(${var} TRUE)
-    ENDIF (${value} STREQUAL ${value2})
+    ENDIF ("not_a_var_${value}" STREQUAL "not_a_var_${value2}")
   ENDFOREACH (value2)
 ENDMACRO(LATEX_LIST_CONTAINS)
 
