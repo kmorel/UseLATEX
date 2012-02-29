@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.8.2}
+\newcommand{\UseLATEXVersion}{1.9.0}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -97,8 +97,8 @@
 
   %-----------------------------------------------------------------------------
 
-  \section{Usage}
-  \label{sec:Usage}
+  \section{Basic Usage}
+  \label{sec:BasicUsage}
 
   Using \UseLATEX is easy. For a basic \latex file, simply include the file
   in your \textfile{CMakeLists.txt} and use the \ald command to make
@@ -303,40 +303,22 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   \textfile{\emph{$\langle$base-name$\rangle$}.synctex.gz} and change their
   paths to the original files in the source directory.
 
-  \subsection{Building Multiple \latex Documents}
-  \label{sec:BuldingMultipleLatexDocuments}
+  %-----------------------------------------------------------------------------
 
-  The most common use for \UseLATEX is to build a single document, such as
-  a paper you are working on. However, some use cases involve building
-  several documents at one time. To do this, you must call \ald multiple
-  times. However, if you do this, the dvi, pdf, etc. targets will be
-  generated multiple times, and that is illegal in the current version of
-  CMake.\footnote{CMake version 2.4 as of this writing.} To get around
-  this, you need to mangle the names of the targets that \ald creates. To
-  do this, use the \textcmake{MANGLE\_TARGET\_NAMES} option.
+  \section{Package Support}
+  \label{sec:PackageSupport}
 
-  \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc1.tex MANGLE_TARGET_NAMES)
-ADD_LATEX_DOCUMENT(MyDoc2.tex MANGLE_TARGET_NAMES)
-  \end{CodeListing}
+  Modern \latex distributions provide a great many packages to provide
+  additional features to the document building process.  A great many more
+  packages are available in online package distributions.  The vast
+  majority of these packages provide features that are self contained
+  within the \latex call itself.  That is, the build process does not have
+  to change to accommodate these packages.
 
-  In the example above, the first call to \ald will create targets named
-  \textmaketarget{MyDoc1\_dvi}, \textmaketarget{MyDoc1\_pdf},
-  \textmaketarget{MyDoc1\_ps}, etc. whereas the second call will create
-  targets named \textmaketarget{MyDoc2\_*}.
-
-  If you still want the simple, short targets to build all of the
-  documents, you can add them yourself with custom targets that depend on
-  the targets created by \ald
-
-  \begin{CodeListing}
-ADD_CUSTOM_TARGET(dvi)
-ADD_DEPENDENCIES(MyDoc1_dvi MyDoc2_dvi)
-ADD_CUSTOM_TARGET(pdf)
-ADD_DEPENDENCIES(MyDoc1_pdf MyDoc2_pdf)
-ADD_CUSTOM_TARGET(ps)
-ADD_DEPENDENCIES(MyDoc1_ps MyDoc2_ps)
-  \end{CodeListing}
+  That said, there are a small number of packages that require
+  supplementary programs to be run or to otherwise change the build
+  process.  These packages require special options to \ald, which are
+  documented here.
 
   \subsection{Making an Index}
   \label{sec:MakingAnIndex}
@@ -405,6 +387,17 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   \textlatex|\makeglossary| and \textlatex|\printglossary| commands).  If
   you are using an older version of \textlatexpackage{nomencl}, you are
   best off to update for a number of reasons.
+
+  %-----------------------------------------------------------------------------
+
+  \section{Advanced Configurations}
+  \label{sec:AdvancedConfigurations}
+
+  This document has heretofore described using \UseLATEX for a single
+  \latex document and associated files (bibliographies, images, indices,
+  etc.).  However there are many configurations to document building that
+  extend beyond this simple scenario including multipart files, multiple
+  documents, and depended builds.
 
   \subsection{Multipart \latex Files}
   \label{sec:MultipartLatexFiles}
@@ -480,6 +473,41 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   original document, is legal. Hence, it is best to only configure tex
   files that contain very little text of the actual document and instead
   are mostly setup and options.
+
+  \subsection{Building Multiple \latex Documents}
+  \label{sec:BuldingMultipleLatexDocuments}
+
+  The most common use for \UseLATEX is to build a single document, such as
+  a paper you are working on. However, some use cases involve building
+  several documents at one time. To do this, you must call \ald multiple
+  times. However, if you do this, the dvi, pdf, etc. targets will be
+  generated multiple times, and that is illegal in the current version of
+  CMake.\footnote{CMake version 2.4 as of this writing.} To get around
+  this, you need to mangle the names of the targets that \ald creates. To
+  do this, use the \textcmake{MANGLE\_TARGET\_NAMES} option.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc1.tex MANGLE_TARGET_NAMES)
+ADD_LATEX_DOCUMENT(MyDoc2.tex MANGLE_TARGET_NAMES)
+  \end{CodeListing}
+
+  In the example above, the first call to \ald will create targets named
+  \textmaketarget{MyDoc1\_dvi}, \textmaketarget{MyDoc1\_pdf},
+  \textmaketarget{MyDoc1\_ps}, etc. whereas the second call will create
+  targets named \textmaketarget{MyDoc2\_*}.
+
+  If you still want the simple, short targets to build all of the
+  documents, you can add them yourself with custom targets that depend on
+  the targets created by \ald
+
+  \begin{CodeListing}
+ADD_CUSTOM_TARGET(dvi)
+ADD_DEPENDENCIES(MyDoc1_dvi MyDoc2_dvi)
+ADD_CUSTOM_TARGET(pdf)
+ADD_DEPENDENCIES(MyDoc1_pdf MyDoc2_pdf)
+ADD_CUSTOM_TARGET(ps)
+ADD_DEPENDENCIES(MyDoc1_ps MyDoc2_ps)
+  \end{CodeListing}
 
   \subsection{Identifying Dependent Files}
   \label{sec:IdentifyingDependentFiles}
@@ -567,7 +595,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex DEPENDS generated_file.tex)
   \label{sec:Why_does_UseLATEX_have_to_copy_my_tex_files}
 
   \UseLATEX cannot process your tex file without copying it.  As explained
-  in Section~\ref{sec:Usage}, \latex is very picky about file locations.
+  in Section~\ref{sec:BasicUsage}, \latex is very picky about file locations.
   The relative locations of files that your input files point to, and all
   but the most simple \latex files point to other files, must remain
   consistent.
@@ -806,6 +834,8 @@ INCLUDE(UseLATEX.cmake)
   \item[Sven Klomp] Help with \synctex support.
   \item[Thimo Langbehn] Support for pstricks with the
     \textcmake{--enable-write18} option.
+  \item[Antonio LaTorre] Support for the \textlatexpackage{multibib}
+    package.
   \item[Edwin van Leeuwen] Fix for a bug when copying \bibtex files.
   \item[Lukasz Lis] Workaround for problem with ImageMagick dropping the
     BoundingBox of eps files by using the \textprog{ps2pdf} program
