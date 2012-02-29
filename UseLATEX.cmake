@@ -987,12 +987,15 @@ MACRO(ADD_LATEX_TARGETS)
 
     IF (LATEX_MULTIBIB_NEWCITES)
       FOREACH (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
+        GET_FILENAME_COMPONENT(multibib_target ${multibib_auxfile} NAME_WE)
         SET(make_dvi_command ${make_dvi_command}
           COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-          ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibib_auxfile})
+          ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibib_target})
         SET(make_pdf_command ${make_pdf_command}
           COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-          ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibib_auxfile})
+          ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibib_target})
+        SET(auxiliary_clean_files ${auxiliary_clean_files}
+          ${output_dir}/${multibib_target}.aux)
       ENDFOREACH (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
     ENDIF (LATEX_MULTIBIB_NEWCITES)
 
