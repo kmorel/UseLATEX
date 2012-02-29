@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.8.2
+# Version: 1.9.0
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -13,15 +13,16 @@
 # The following MACROS are defined:
 #
 # ADD_LATEX_DOCUMENT(<tex_file>
-#                       [BIBFILES <bib_files>]
-#                       [INPUTS <input_tex_files>]
-#                       [IMAGE_DIRS] <image_directories>
-#                       [IMAGES] <image_files>
-#                       [CONFIGURE] <tex_files>
-#                       [DEPENDS] <tex_files>
-#                       [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
-#                       [DEFAULT_PDF] [DEFAULT_SAFEPDF]
-#                       [MANGLE_TARGET_NAMES])
+#                    [BIBFILES <bib_files>]
+#                    [INPUTS <input_tex_files>]
+#                    [IMAGE_DIRS] <image_directories>
+#                    [IMAGES] <image_files>
+#                    [CONFIGURE] <tex_files>
+#                    [DEPENDS] <tex_files>
+#                    [MULTIBIB_NEWCITES] <suffix_list>
+#                    [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
+#                    [DEFAULT_PDF] [DEFAULT_SAFEPDF]
+#                    [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
@@ -33,7 +34,7 @@
 #       directories or listed by IMAGES are also copied to the output
 #       directory and coverted to an appropriate format if necessary.  Any
 #       tex files also listed with the CONFIGURE option are also processed
-#       with the CMake CONFIGURE_FILE command (with the @ONLY flag.  Any
+#       with the CMake CONFIGURE_FILE command (with the @ONLY flag).  Any
 #       file listed in CONFIGURE but not the target tex file or listed with
 #       INPUTS has no effect. DEPENDS can be used to specify generated files
 #       that are needed to compile the latex target.
@@ -62,9 +63,14 @@
 #       is to make the targets unique if ADD_LATEX_DOCUMENT is called for
 #       multiple documents.  If the argument USE_INDEX is given, then
 #       commands to build an index are made.  If the argument USE_GLOSSARY
-#       is given, then commands to build a glossary are made.
+#       is given, then commands to build a glossary are made.  If the
+#       argument MULTIBIB_NEWCITES is given, then additional bibtex calls
+#       are added to the build to support the extra auxiliary files created
+#       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.9.0 Add support for the multibib package (thanks to Antonio LaTorre).
 #
 # 1.8.2 Fix corner case when an argument name was also a variable containing
 #       the text of an argument.  In this case, the CMake IF was matching
@@ -786,7 +792,7 @@ ENDMACRO(LATEX_COPY_INPUT_FILE)
 
 MACRO(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
     )
 ENDMACRO(LATEX_USAGE command message)
 
