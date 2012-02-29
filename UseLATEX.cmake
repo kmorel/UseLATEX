@@ -796,7 +796,7 @@ ENDMACRO(LATEX_USAGE command message)
 MACRO(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
-    "BIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
+    "BIBFILES;MULTIBIBFILES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
     "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;USE_NOMENCL;DEFAULT_PDF;DEFAULT_SAFEPDF;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
@@ -978,12 +978,24 @@ MACRO(ADD_LATEX_TARGETS)
   ENDIF (LATEX_USE_NOMENCL)
 
   IF (LATEX_BIBFILES)
-    SET(make_dvi_command ${make_dvi_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
-    SET(make_pdf_command ${make_pdf_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+    IF (LATEX_MULTIBIBFILES)
+      FOREACH (multibibfile ${LATEX_MULTIBIBFILES})
+        SET(make_dvi_command ${make_dvi_command}
+          COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibibfile})
+        SET(make_pdf_command ${make_pdf_command}
+          COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibibfile})
+      ENDFOREACH (multibibfile ${LATEX_MULTIBIBFILES})
+    ELSE (LATEX_MULTIBIBFILES)
+      SET(make_dvi_command ${make_dvi_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+      SET(make_pdf_command ${make_pdf_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+    ENDIF (LATEX_MULTIBIBFILES)
+
     FOREACH (bibfile ${LATEX_BIBFILES})
       SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${bibfile})
       SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${bibfile})
