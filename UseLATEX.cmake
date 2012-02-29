@@ -978,6 +978,13 @@ MACRO(ADD_LATEX_TARGETS)
   ENDIF (LATEX_USE_NOMENCL)
 
   IF (LATEX_BIBFILES)
+    SET(make_dvi_command ${make_dvi_command}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+    SET(make_pdf_command ${make_pdf_command}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
+
     IF (LATEX_MULTIBIB_NEWCITES)
       FOREACH (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
         SET(make_dvi_command ${make_dvi_command}
@@ -987,13 +994,6 @@ MACRO(ADD_LATEX_TARGETS)
           COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
           ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibib_auxfile})
       ENDFOREACH (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
-    ELSE (LATEX_MULTIBIB_NEWCITES)
-      SET(make_dvi_command ${make_dvi_command}
-        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
-      SET(make_pdf_command ${make_pdf_command}
-        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${LATEX_TARGET})
     ENDIF (LATEX_MULTIBIB_NEWCITES)
 
     FOREACH (bibfile ${LATEX_BIBFILES})
