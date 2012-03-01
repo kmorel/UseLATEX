@@ -388,6 +388,55 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   you are using an older version of \textlatexpackage{nomencl}, you are
   best off to update for a number of reasons.
 
+  \subsection{\textlatexpackage{multibib} Support}
+  \label{sec:multibibSupport}
+
+  The \textlatexpackage{multibib} package provides a mechanism to create a
+  set of distinct bibliographies that are not necessarily associated with
+  sections of the document.  Part of the operation of this package creates
+  multiple \latex auxiliary files that need to be processed independently
+  with \bibtex.  Consequently, the build needs to be modified to run
+  \bibtex multiple times with different inputs.  This can be achieved with
+  the \textcmake{MULTIBIB\_NEWCITES} argument to \ald.
+
+  As an example, consider the following usage of the
+  \textlatexpackage{multibib} package, partially taken from its
+  documentation.  It creates a set of distinct citation commands named
+  \textlatex|own|, \textlatex|submitted|, and \textlatex|internal| with the
+  section heads \textlatex|Own Work|, \textlatex|Submitted Work|, and
+  \textlatex|Master Theses and Ph.D. Theses| respectively.  They
+  collectively use the bibliography files \textfile{own.bib},
+  \textfile{submitted.bib}, \textfile{techreports.bib}, and
+  \textfile{theses.bib}.
+
+  \begin{CodeListing}
+\newcites{own,submitted,internal}%
+  {Own Work,%
+   Submitted Work,%
+   {Technical Reports, Master Theses and Ph.D. Theses}}
+  \end{CodeListing}
+  \begin{CodeListing}
+\bibliographyown{own.bib}
+  \end{CodeListing}
+  \begin{CodeListing}
+\bibliographysubmitted{submitted.bib}
+  \end{CodeListing}
+  \begin{CodeListing}
+\bibliographyinternal{techreports.bib,theses.bib}
+  \end{CodeListing}
+
+  The three suffixes specified to the \textlatex|\newcite| command and the
+  four bibliography files referenced must all be specified in the \ald
+  command with the \textcmake{MULTIBIB\_NEWCITES} and \textcmake{BIBFILES}
+  arguments, respectively.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES own.bib submitted.bib techreports.bib theses.bib
+  MULTIBIB_NEWCITES own submitted internal
+  )
+  \end{CodeListing}
+
   %-----------------------------------------------------------------------------
 
   \section{Advanced Configurations}
