@@ -186,8 +186,10 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib)
   macro to point to them. \UseLATEX will take care of the rest.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
-                   IMAGE_DIRS images)
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  )
   \end{CodeListing}
 
   If you want to break up your image files in several different
@@ -195,8 +197,10 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   after the \textcmake{IMAGE\_DIRS} command.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
-                   IMAGE_DIRS icons figures)
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS icons figures
+  )
   \end{CodeListing}
 
   Alternatively, you could list all of your image files separatly with the
@@ -210,7 +214,9 @@ SET(MyDocImages
   figures/flowchart.eps
   figures/team.jpeg
   )
-ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  IMAGES ${MyDocImages}
+  )
   \end{CodeListing}
   %$
 
@@ -258,9 +264,11 @@ ADD_LATEX_DOCUMENT(MyDoc.tex IMAGES ${MyDocImages})
   \textcmake{DEFAULT\_PDF} option to \ald:
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
-                   IMAGE_DIRS images
-                   DEFAULT_PDF)
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  DEFAULT_PDF
+  )
   \end{CodeListing}
 
   If you still want to use the \textprog{latex} program to compile your
@@ -269,9 +277,11 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   option to \ald:
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
-                   IMAGE_DIRS images
-                   DEFAULT_SAFEPDF)
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  DEFAULT_SAFEPDF
+  )
   \end{CodeListing}
 
   \subsection{\synctex-Enabled Editors}
@@ -330,9 +340,11 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   \textprog{makeindex} will automatically be added to the build.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
-                   IMAGE_DIRS images
-                   USE_INDEX)
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  USE_INDEX
+  )
   \end{CodeListing}
 
   \subsection{Making a Glossary}
@@ -351,9 +363,11 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   handled for you.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
-                   IMAGE_DIRS images
-                   USE_GLOSSARY)
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  USE_GLOSSARY
+  )
   \end{CodeListing}
 
   \subsection{Nomenclature Support}
@@ -372,9 +386,11 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
   build the nomenclature.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib
-                   IMAGE_DIRS images
-                   USE_NOMENCL)
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  USE_NOMENCL
+  )
   \end{CodeListing}
 
   It should be noted that this feature only works with
