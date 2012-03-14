@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.9.0
+# Version: 1.9.1
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -69,6 +69,9 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.9.1 Fixed typo that caused the LATEX_SMALL_IMAGES option to fail to
+#       activate.
 #
 # 1.9.0 Add support for the multibib package (thanks to Antonio LaTorre).
 #
@@ -708,7 +711,7 @@ MACRO(LATEX_PROCESS_IMAGES dvi_outputs pdf_outputs)
       SET(convert_flags)
 
       # Check to see if we need to downsample the image.
-      LATEX_LIST_CONTAINS(is_raster extension
+      LATEX_LIST_CONTAINS(is_raster "${extension}"
         ${LATEX_DVI_RASTER_IMAGE_EXTENSIONS}
         ${LATEX_PDF_RASTER_IMAGE_EXTENSIONS})
       IF (LATEX_SMALL_IMAGES)
