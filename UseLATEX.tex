@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.9.1}
+\newcommand{\UseLATEXVersion}{1.9.2}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -238,6 +238,16 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   also give you a \textcmakevar{LATEX\_SMALL\_IMAGES} option that, when on,
   will downsample raster images. This can help speed up building and
   viewing documents. It will also make the output image sizes smaller.
+
+  \UseLATEX will occasionally use a conversion program other than
+  ImageMagick's \textprog{convert}.  For example, \textprog{ps2pdf} will be
+  used when converting eps to pdf to get around a problem where ImageMagick
+  drops the bounding box information.  When available, the
+  \textprog{pdftops} from the Poppler utilities will be used to convert pdf
+  to eps because it better preserves vector graphics and color spaces.  At
+  any rate, you do not need to worry about setting the appropriate image
+  conversion program.  \UseLATEX will automatically select the best one and
+  issue errors or warnings if there is a problem.
 
   Depending on what program is launched to build your \latex file (either
   \textprog{latex} or \textprog{pdflatex}, and \UseLATEX supports both), a
@@ -546,8 +556,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   a paper you are working on. However, some use cases involve building
   several documents at one time. To do this, you must call \ald multiple
   times. However, if you do this, the dvi, pdf, etc. targets will be
-  generated multiple times, and that is illegal in the current version of
-  CMake.\footnote{CMake version 2.4 as of this writing.} To get around
+  generated multiple times, and that is illegal in CMake.  To get around
   this, you need to mangle the names of the targets that \ald creates. To
   do this, use the \textcmake{MANGLE\_TARGET\_NAMES} option.
 
