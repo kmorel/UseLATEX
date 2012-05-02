@@ -78,6 +78,9 @@
 #       Since we are updating the minimum CMake version, I'm going to start
 #       using the builtin LIST commands that are now available.
 #
+#       Favor using pdftops from the Poppler package to convert from pdf to
+#       eps.  It does a much better job than ImageMagick or ghostscript.
+#
 # 1.9.1 Fixed typo that caused the LATEX_SMALL_IMAGES option to fail to
 #       activate.
 #
@@ -516,6 +519,11 @@ FUNCTION(LATEX_SETUP_VARIABLES)
 
   FIND_PACKAGE(UnixCommands)
 
+  FIND_PROGRAM(PDFTOPS_CONVERTER
+    NAMES pdftops
+    DOC "The pdf to ps converter program from the Poppler package."
+    )
+
   MARK_AS_ADVANCED(CLEAR
     LATEX_COMPILER
     PDFLATEX_COMPILER
@@ -524,6 +532,7 @@ FUNCTION(LATEX_SETUP_VARIABLES)
     XINDY_COMPILER
     DVIPS_CONVERTER
     PS2PDF_CONVERTER
+    PDFTOPS_CONVERTER
     LATEX2HTML_CONVERTER
     )
 
@@ -533,6 +542,7 @@ FUNCTION(LATEX_SETUP_VARIABLES)
   LATEX_NEEDIT(MAKEINDEX_COMPILER makeindex)
   LATEX_WANTIT(DVIPS_CONVERTER dvips)
   LATEX_WANTIT(PS2PDF_CONVERTER ps2pdf)
+  LATEX_WANTIT(PDFTOPS_CONVERTER pdftops)
   LATEX_WANTIT(LATEX2HTML_CONVERTER latex2html)
 
   SET(LATEX_COMPILER_FLAGS "-interaction=nonstopmode"
@@ -553,6 +563,8 @@ FUNCTION(LATEX_SETUP_VARIABLES)
     CACHE STRING "Flags passed to dvips.")
   SET(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
     CACHE STRING "Flags passed to ps2pdf.")
+  SET(PDFTOPS_CONVERTER_FLAGS -r 600
+    CACHE STRING "Flags passed to pdftops.")
   SET(LATEX2HTML_CONVERTER_FLAGS ""
     CACHE STRING "Flags passed to latex2html.")
   MARK_AS_ADVANCED(
@@ -565,6 +577,7 @@ FUNCTION(LATEX_SETUP_VARIABLES)
     MAKENOMENCLATURE_COMPILER_FLAGS
     DVIPS_CONVERTER_FLAGS
     PS2PDF_CONVERTER_FLAGS
+    PDFTOPS_CONVERTER_FLAGS
     LATEX2HTML_CONVERTER_FLAGS
     )
   SEPARATE_ARGUMENTS(LATEX_COMPILER_FLAGS)
@@ -576,6 +589,7 @@ FUNCTION(LATEX_SETUP_VARIABLES)
   SEPARATE_ARGUMENTS(MAKENOMENCLATURE_COMPILER_FLAGS)
   SEPARATE_ARGUMENTS(DVIPS_CONVERTER_FLAGS)
   SEPARATE_ARGUMENTS(PS2PDF_CONVERTER_FLAGS)
+  SEPARATE_ARGUMENTS(PDFTOPS_CONVERTER_FLAGS)
   SEPARATE_ARGUMENTS(LATEX2HTML_CONVERTER_FLAGS)
 
   FIND_PROGRAM(IMAGEMAGICK_CONVERT convert
@@ -645,15 +659,26 @@ FUNCTION(LATEX_ADD_CONVERT_COMMAND
     )
   SET (converter ${IMAGEMAGICK_CONVERT})
   SET (convert_flags "")
-  # ImageMagick has broken eps to pdf conversion
-  # use ps2pdf instead
   IF (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
+    # ImageMagick has broken eps to pdf conversion
+    # use ps2pdf instead
     IF (PS2PDF_CONVERTER)
       SET (converter ${PS2PDF_CONVERTER})
       SET (convert_flags -dEPSCrop ${PS2PDF_CONVERTER_FLAGS})
     ELSE (PS2PDF_CONVERTER)
       MESSAGE(SEND_ERROR "Using postscript files with pdflatex requires ps2pdf for conversion.")
     ENDIF (PS2PDF_CONVERTER)
+  ELSEIF (${input_extension} STREQUAL ".pdf" AND ${output_extension} STREQUAL ".eps")
+    # ImageMagick can also be sketchy on pdf to eps conversion.  Not good with
+    # color spaces and tends to unnecessarily rasterize.
+    # use pdftops instead
+    IF (PDFTOPS_CONVERTER)
+      SET(converter ${PDFTOPS_CONVERTER})
+      SET(convert_flags -eps ${PDFTOPS_CONVERTER_FLAGS})
+    ELSE (PDFTOPS_CONVERTER)
+      MESSAGE(STATUS "Consider getting pdftops from Poppler to convert PDF images to EPS images.")
+      SET (convert_flags ${flags})
+    ENDIF (PDFTOPS_CONVERTER)
   ELSE (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
     SET (convert_flags ${flags})
   ENDIF (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
