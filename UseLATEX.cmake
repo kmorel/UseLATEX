@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.9.2
+# Version: 1.9.3
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -69,6 +69,9 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.9.3 Hide some variables that are now cached but should not show up in
+#       the ccmake list of variables.
 #
 # 1.9.2 Changed MACRO declarations to FUNCTION declarations.  The better
 #       FUNCTION scoping will hopefully avoid some common but subtle bugs.
@@ -209,10 +212,10 @@ ENDFUNCTION(LATEX_LIST_CONTAINS)
 FUNCTION(LATEX_PARSE_ARGUMENTS prefix arg_names option_names)
   SET(DEFAULT_ARGS)
   FOREACH(arg_name ${arg_names})
-    SET(${prefix}_${arg_name} CACHE INTENRAL "" FORCE)
+    SET(${prefix}_${arg_name} CACHE INTERNAL "${prefix} argument" FORCE)
   ENDFOREACH(arg_name)
   FOREACH(option ${option_names})
-    SET(${prefix}_${option} CACHE INTERNAL "" FORCE)
+    SET(${prefix}_${option} CACHE INTERNAL "${prefix} option" FORCE)
   ENDFOREACH(option)
 
   SET(current_arg_name DEFAULT_ARGS)
@@ -222,16 +225,17 @@ FUNCTION(LATEX_PARSE_ARGUMENTS prefix arg_names option_names)
     LATEX_LIST_CONTAINS(is_option ${arg} ${option_names})
     IF (is_arg_name)
       SET(${prefix}_${current_arg_name} ${current_arg_list}
-        CACHE INTERNAL "" FORCE)
+        CACHE INTERNAL "${prefix} argument" FORCE)
       SET(current_arg_name ${arg})
       SET(current_arg_list)
     ELSEIF (is_option)
-      SET(${prefix}_${arg} TRUE CACHE INTERNAL "" FORCE)
+      SET(${prefix}_${arg} TRUE CACHE INTERNAL "${prefix} option" FORCE)
     ELSE (is_arg_name)
       SET(current_arg_list ${current_arg_list} ${arg})
     ENDIF (is_arg_name)
   ENDFOREACH(arg)
-  SET(${prefix}_${current_arg_name} ${current_arg_list} CACHE INTERNAL "" FORCE)
+  SET(${prefix}_${current_arg_name} ${current_arg_list}
+    CACHE INTERNAL "${prefix} argument" FORCE)
 ENDFUNCTION(LATEX_PARSE_ARGUMENTS)
 
 # Match the contents of a file to a regular expression.
