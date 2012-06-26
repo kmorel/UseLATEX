@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.9.3}
+\newcommand{\UseLATEXVersion}{1.9.4}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -32,6 +32,7 @@
 \newcommand*{\latex}{\LaTeX\xspace}
 \newcommand*{\bibtex}{\textsc{Bib}\TeX\xspace}
 \newcommand*{\miktex}{Mik\TeX\xspace}
+\newcommand*{\mactex}{Mac\TeX\xspace}
 \ifdefined\synctex
   \renewcommand*{\synctex}{SyncTeX\xspace}
 \else
@@ -912,6 +913,51 @@ INCLUDE(UseLATEX.cmake)
   This addition could cause a failure for any \latex implementation that
   does not support the \textcmake{--enable-write18} flag (for which there
   are many).
+
+  \subsection{Why is \UseLATEX complaining about image file names?}
+  \label{sec:Why_is_UseLATEX_complaining_about_image_file_names}
+
+  If you have an image file with a filename that contains multiple periods,
+  for example \textfile{my.image.pdf}, \UseLATEX will issue a warning like
+  the following.
+
+  \begin{CodeListing}
+Some LaTeX distributions have problems with image file names
+with multiple extensions.  Consider changing my.image.pdf to
+something like my-image.pdf.
+  \end{CodeListing}
+
+  This is because, just as the warning reports, some versions of \latex
+  have problems with including image filenames with multiple extensions.
+  For example, if you tried to include \textfile{my.image.pdf} with a
+  command like
+
+  \begin{CodeListing}
+\includegraphics{my.image}
+  \end{CodeListing}
+
+  then some versions of \latex will respond that the image extension
+  \textfile{.image} is not recognized or that the file \textfile{my.image}
+  is not found because it fails to look for files with valid extensions.
+
+  Although it is inadvisable (per Section~\ref{sec:IncoporatingImages}),
+  you might try to get around the problem by specifying the extension like
+  this.
+
+  \begin{CodeListing}
+\includegraphics{my.image.pdf}
+  \end{CodeListing}
+
+  This might work, or it might just make \latex complain that it does not
+  recognize images with extension \textfile{.image.pdf}.
+
+  In the end, the best solution is to simply use filenames that will not
+  trouble \latex.  Even though some \latex distributions (like \mactex)
+  seem to handle this extension ambiguity correctly, others clearly do
+  not.  Thus, even if your \latex distribution handles these image
+  filenames correctly, it is still a bad idea in case you need to change
+  distributions or build on other computers.  Your best course of action is
+  to simply heed the warning and rename your files.
 
   %-----------------------------------------------------------------------------
 

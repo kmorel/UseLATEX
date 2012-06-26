@@ -729,6 +729,14 @@ FUNCTION(LATEX_CONVERT_IMAGE
 
   LATEX_GET_FILENAME_COMPONENT(extension "${input_file}" EXT)
 
+  # Check input filename for potential problems with LaTeX.
+  LATEX_GET_FILENAME_COMPONENT(name "${input_file}" NAME_WE)
+  IF (name MATCHES ".*\\..*")
+    STRING(REPLACE "." "-" suggested_name "${name}")
+    SET(suggested_name "${suggested_name}${extension}")
+    MESSAGE(WARNING "Some LaTeX distributions have problems with image file names with multiple extensions.  Consider changing ${name}${extension} to something like ${suggested_name}.")
+  ENDIF (name MATCHES ".*\\..*")
+
   STRING(REGEX REPLACE "\\.[^.]*\$" ${output_extension} output_file
     "${input_file}")
 
