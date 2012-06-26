@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.9.3
+# Version: 1.9.4
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -69,6 +69,8 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.9.4 Fix issues with filenames containing multiple periods.
 #
 # 1.9.3 Hide some variables that are now cached but should not show up in
 #       the ccmake list of variables.
@@ -252,6 +254,24 @@ FUNCTION(LATEX_FILE_MATCH variable filename regexp default)
     SET(${variable} "${default}" PARENT_SCOPE)
   ENDIF (match_result)
 ENDFUNCTION(LATEX_FILE_MATCH)
+
+# A version of GET_FILENAME_COMPONENT that treats extensions after the last
+# period rather than the first.  To the best of my knowledge, all filenames
+# typically used by LaTeX, including image files, have small extensions
+# after the last dot.
+FUNCTION(LATEX_GET_FILENAME_COMPONENT varname filename type)
+  SET(result)
+  IF ("${type}" STREQUAL "NAME_WE")
+    GET_FILENAME_COMPONENT(name ${filename} NAME)
+    STRING(REGEX REPLACE "\\.[^.]*\$" "" result "${name}")
+  ELSEIF ("${type}" STREQUAL "EXT")
+    GET_FILENAME_COMPONENT(name ${filename} NAME)
+    STRING(REGEX MATCH "\\.[^.]*\$" result "${name}")
+  ELSE ("${type}" STREQUAL "NAME_WE")
+    GET_FILENAME_COMPONENT(result ${filename} ${type})
+  ENDIF ("${type}" STREQUAL "NAME_WE")
+  SET(${varname} "${result}" PARENT_SCOPE)
+ENDFUNCTION(LATEX_GET_FILENAME_COMPONENT)
 
 #############################################################################
 # Functions that perform processing during a LaTeX build.
@@ -707,7 +727,7 @@ FUNCTION(LATEX_CONVERT_IMAGE
   SET(input_dir ${CMAKE_CURRENT_SOURCE_DIR})
   LATEX_GET_OUTPUT_PATH(output_dir)
 
-  GET_FILENAME_COMPONENT(extension "${input_file}" EXT)
+  LATEX_GET_FILENAME_COMPONENT(extension "${input_file}" EXT)
 
   STRING(REGEX REPLACE "\\.[^.]*\$" ${output_extension} output_file
     "${input_file}")
@@ -760,7 +780,7 @@ FUNCTION(LATEX_PROCESS_IMAGES dvi_outputs_var pdf_outputs_var)
   SET(pdf_outputs)
   FOREACH(file ${ARGN})
     IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
-      GET_FILENAME_COMPONENT(extension "${file}" EXT)
+      LATEX_GET_FILENAME_COMPONENT(extension "${file}" EXT)
       SET(convert_flags)
 
       # Check to see if we need to downsample the image.
@@ -774,7 +794,7 @@ FUNCTION(LATEX_PROCESS_IMAGES dvi_outputs_var pdf_outputs_var)
       ENDIF (LATEX_SMALL_IMAGES)
 
       # Make sure the output directory exists.
-      GET_FILENAME_COMPONENT(path "${output_dir}/${file}" PATH)
+      LATEX_GET_FILENAME_COMPONENT(path "${output_dir}/${file}" PATH)
       MAKE_DIRECTORY("${path}")
 
       # Do conversions for dvi.
@@ -808,7 +828,7 @@ ENDFUNCTION(ADD_LATEX_IMAGES)
 FUNCTION(LATEX_COPY_GLOBBED_FILES pattern dest)
   FILE(GLOB file_list ${pattern})
   FOREACH(in_file ${file_list})
-    GET_FILENAME_COMPONENT(out_file ${in_file} NAME)
+    LATEX_GET_FILENAME_COMPONENT(out_file ${in_file} NAME)
     CONFIGURE_FILE(${in_file} ${dest}/${out_file} COPYONLY)
   ENDFOREACH(in_file)
 ENDFUNCTION(LATEX_COPY_GLOBBED_FILES)
@@ -817,7 +837,7 @@ FUNCTION(LATEX_COPY_INPUT_FILE file)
   LATEX_GET_OUTPUT_PATH(output_dir)
 
   IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${file})
-    GET_FILENAME_COMPONENT(path ${file} PATH)
+    LATEX_GET_FILENAME_COMPONENT(path ${file} PATH)
     FILE(MAKE_DIRECTORY ${output_dir}/${path})
 
     LATEX_LIST_CONTAINS(use_config ${file} ${LATEX_CONFIGURE})
@@ -873,7 +893,7 @@ FUNCTION(PARSE_ADD_LATEX_ARGUMENTS command)
   IF (LATEX_DEFAULT_ARGS)
     LIST(GET LATEX_DEFAULT_ARGS 0 latex_main_input)
     LIST(REMOVE_AT LATEX_DEFAULT_ARGS 0)
-    GET_FILENAME_COMPONENT(latex_target ${latex_main_input} NAME_WE)
+    LATEX_GET_FILENAME_COMPONENT(latex_target ${latex_main_input} NAME_WE)
     SET(LATEX_MAIN_INPUT ${latex_main_input} CACHE INTERNAL "" FORCE)
     SET(LATEX_TARGET ${latex_target} CACHE INTERNAL "" FORCE)
   ELSE (LATEX_DEFAULT_ARGS)
@@ -958,7 +978,7 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
     FOREACH(extension ${LATEX_IMAGE_EXTENSIONS})
       FILE(GLOB files ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*${extension})
       FOREACH(file ${files})
-        GET_FILENAME_COMPONENT(filename ${file} NAME)
+        LATEX_GET_FILENAME_COMPONENT(filename ${file} NAME)
         SET(image_list ${image_list} ${dir}/${filename})
       ENDFOREACH(file)
     ENDFOREACH(extension)
@@ -1047,7 +1067,7 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
   IF (LATEX_BIBFILES)
     IF (LATEX_MULTIBIB_NEWCITES)
       FOREACH (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
-        GET_FILENAME_COMPONENT(multibib_target ${multibib_auxfile} NAME_WE)
+        LATEX_GET_FILENAME_COMPONENT(multibib_target ${multibib_auxfile} NAME_WE)
         SET(make_dvi_command ${make_dvi_command}
           COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
           ${BIBTEX_COMPILER} ${BIBTEX_COMPILER_FLAGS} ${multibib_target})
