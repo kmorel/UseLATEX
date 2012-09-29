@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.9.4}
+\newcommand{\UseLATEXVersion}{1.9.5}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -82,8 +82,9 @@
     glossaries.
   \item Optionally runs configure on your \latex files to replace
     \textcmake{@\textvar{VARIABLE}@} with the equivalent CMake variable.
-  \item Automatically finds png, jpeg, eps, and pdf files and converts them
-    to formats \textprog{latex} and \textprog{pdflatex} understand.
+  \item Automatically finds png, jpeg, eps, pdf, svg, tiff, and gif files
+    and converts them to formats \textprog{latex} and \textprog{pdflatex}
+    understand.
   \end{itemize}
 
   %-----------------------------------------------------------------------------
@@ -986,6 +987,7 @@ something like my-image.pdf.
   \item[Eric Noulard] Support for any file extension on \latex input files.
   \item[Theodore Papadopoulo] \textcmake{DEPENDS} parameter for \ald and
     help in identifying some dependency issues.
+  \item[Jorge Gerardo Pe\~{n}a Pastor] Support for SVG files.
   \item[Raymod Wan] \textcmake{DEFAULT\_SAFEPDF} option.
   \end{description}
 
