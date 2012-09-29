@@ -1,0 +1,7 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+  "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg width="362" height="218">
+  <circle cx="109" cy="109" r="109" fill="red"/>
+  <circle cx="253" cy="109" r="109" fill="blue"/>
+</svg>
