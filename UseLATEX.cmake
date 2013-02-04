@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.9.5
+# Version: 1.9.6
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -69,6 +69,8 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.9.6 Fixed problem with LATEX_SMALL_IMAGES.
 #
 # 1.9.5 Add support for image types not directly supported by either latex
 #       or pdflatex.  (Thanks to Jorge Gerardo Pena Pastor for SVG support.)
@@ -635,11 +637,11 @@ FUNCTION(LATEX_SETUP_VARIABLES)
     "If on, the raster images will be converted to 1/6 the original size.  This is because papers usually require 600 dpi images whereas most monitors only require at most 96 dpi.  Thus, smaller images make smaller files for web distributation and can make it faster to read dvi files."
     OFF)
   IF (LATEX_SMALL_IMAGES)
-    SET(LATEX_RASTER_SCALE 16)
-    SET(LATEX_OPPOSITE_RASTER_SCALE 100)
+    SET(LATEX_RASTER_SCALE 16 PARENT_SCOPE)
+    SET(LATEX_OPPOSITE_RASTER_SCALE 100 PARENT_SCOPE)
   ELSE (LATEX_SMALL_IMAGES)
-    SET(LATEX_RASTER_SCALE 100)
-    SET(LATEX_OPPOSITE_RASTER_SCALE 16)
+    SET(LATEX_RASTER_SCALE 100 PARENT_SCOPE)
+    SET(LATEX_OPPOSITE_RASTER_SCALE 16 PARENT_SCOPE)
   ENDIF (LATEX_SMALL_IMAGES)
 
   # Just holds extensions for known image types.  They should all be lower case.
