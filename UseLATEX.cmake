@@ -74,6 +74,8 @@
 # History:
 #
 # 1.10.0 Added NO_DEFAULT and DEFAULT_PS options.
+#       Fixed issue with cleaning files for LaTeX documents originating in
+#       a subdirectory.
 #
 # 1.9.6 Fixed problem with LATEX_SMALL_IMAGES.
 #       Strengthened check to make sure the output directory does not contain
@@ -996,6 +998,7 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
   # Probably not all of these will be generated, but they could be.
   # Note that the aux file is added later.
   SET(auxiliary_clean_files
+    ${output_dir}/${LATEX_TARGET}.aux
     ${output_dir}/${LATEX_TARGET}.bbl
     ${output_dir}/${LATEX_TARGET}.blg
     ${output_dir}/${LATEX_TARGET}-blx.bib
@@ -1051,6 +1054,9 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
     SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
     SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
     IF (${input} MATCHES "\\.tex$")
+      # Dependent .tex files might have their own .aux files created.  Make
+      # sure these get cleaned as well.  This might replicate the cleaning
+      # of the main .aux file, which is OK.
       STRING(REGEX REPLACE "\\.tex$" "" input_we ${input})
       SET(auxiliary_clean_files ${auxiliary_clean_files}
         ${output_dir}/${input_we}.aux

@@ -1,0 +1,4 @@
+This tests appropriate behavior when the document is located in a
+subdirectory.  When running this test, make sure that the document is built
+correctly, and that the auxclean and clean targets get rid of all the built
+files.
