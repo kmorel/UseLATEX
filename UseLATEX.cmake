@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.9.6
+# Version: 1.10.0
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -21,7 +21,7 @@
 #                    [DEPENDS] <tex_files>
 #                    [MULTIBIB_NEWCITES] <suffix_list>
 #                    [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
-#                    [DEFAULT_PDF] [DEFAULT_SAFEPDF]
+#                    [DEFAULT_PDF] [DEFAULT_SAFEPDF] [DEFAULT_PS] [NO_DEFAULT]
 #                    [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
@@ -56,7 +56,10 @@
 #
 #       The dvi target is added to the ALL.  That is, it will be the target
 #       built by default.  If the DEFAULT_PDF argument is given, then the
-#       pdf target will be the default instead of dvi.
+#       pdf target will be the default instead of dvi.  Likewise,
+#       DEFAULT_SAFEPDF sets the default target to safepdf.  If NO_DEFAULT
+#       is specified, then no target will be added to ALL, which is
+#       convenient when including LaTeX documentation with something else.
 #
 #       If the argument MANGLE_TARGET_NAMES is given, then each of the
 #       target names above will be mangled with the <tex_file> name.  This
@@ -69,6 +72,8 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.10.0 Added NO_DEFAULT and DEFAULT_PS options.
 #
 # 1.9.6 Fixed problem with LATEX_SMALL_IMAGES.
 #       Strengthened check to make sure the output directory does not contain
@@ -920,7 +925,7 @@ ENDFUNCTION(LATEX_COPY_INPUT_FILE)
 
 FUNCTION(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF] [DEFAULT_PS] [NO_DEFAULT]\n           [MANGLE_TARGET_NAMES])"
     )
 ENDFUNCTION(LATEX_USAGE command message)
 
@@ -931,7 +936,7 @@ FUNCTION(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;MULTIBIB_NEWCITES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
-    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;USE_NOMENCL;DEFAULT_PDF;DEFAULT_SAFEPDF;MANGLE_TARGET_NAMES"
+    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;USE_NOMENCL;DEFAULT_PDF;DEFAULT_SAFEPDF;DEFAULT_PS;NO_DEFAULT;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -1195,13 +1200,13 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
     COMMAND ${make_dvi_command}
     DEPENDS ${make_dvi_depends}
     )
-  IF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
+  IF (LATEX_NO_DEFAULT OR LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF OR DEFAULT_PS)
     ADD_CUSTOM_TARGET(${dvi_target}
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ELSE (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
+  ELSE (LATEX_NO_DEFAULT OR LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF OR DEFAULT_PS)
     ADD_CUSTOM_TARGET(${dvi_target} ALL
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ENDIF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
+  ENDIF (LATEX_NO_DEFAULT OR LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF OR DEFAULT_PS)
 
   # Add commands and targets for building pdf outputs (with pdflatex).
   IF (PDFLATEX_COMPILER)
@@ -1223,8 +1228,13 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-    ADD_CUSTOM_TARGET(${ps_target}
-      DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+    IF (LATEX_DEFAULT_PS)
+      ADD_CUSTOM_TARGET(${ps_target} ALL
+        DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+    ELSE (LATEX_DEFAULT_PS)
+      ADD_CUSTOM_TARGET(${ps_target}
+        DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+    ENDIF (LATEX_DEFAULT_PS)
     IF (PS2PDF_CONVERTER)
       # Since both the pdf and safepdf targets have the same output, we
       # cannot properly do the dependencies for both.  When selecting safepdf,

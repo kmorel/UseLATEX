@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.9.6}
+\newcommand{\UseLATEXVersion}{1.10.0}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -266,8 +266,8 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
     \$\{CMAKE\_CURRENT\_SOURCE\_DIR\}/images} will fail.  Use
   \textcmake{IMAGE\_DIRS images} instead.
 
-  \subsection{Create a PDF by Default}
-  \label{sec:CreateAPDFByDefault}
+  \subsection{Create a PDF or PS by Default}
+  \label{sec:CreateAPDFOrPSByDefault}
 
   By default, when you use \ald and then run make with no arguments, the
   dvi file will be created. You have to specifically build the pdf target
@@ -295,6 +295,39 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   DEFAULT_SAFEPDF
   )
   \end{CodeListing}
+
+  It is also possible to make postscript files by default by using the
+  \textcmake{DEFAULT\_PS} option.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  DEFAULT_PS
+  )
+  \end{CodeListing}
+
+  \subsection{Create Nothing by Default}
+  \label{sec:CreateNothingByDefault}
+
+  Sometimes it is desirable to disable the building of your \latex document
+  by default (that is, not build it with the \textmaketarget{all} target).
+  This is convenient when including \latex documentation with some other
+  source to build such as when you are documenting a library.  To remove
+  all targets from the default, simply add the \textcmake{NO\_DEFAULT}
+  option to \ald.
+
+  \begin{CodeListing}
+ADD_LATEX_DOCUMENT(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  NO_DEFAULT
+  )
+  \end{CodeListing}
+
+  It is undefined what happens if you combine the \textcmake{NO\_DEFAULT}
+  option with any of the other default build target options like
+  \textcmake{DEFAULT\_PDF}.
 
   \subsection{\synctex-Enabled Editors}
   \label{sec:SynctexEnabledEditors}
