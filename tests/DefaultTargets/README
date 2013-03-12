@@ -1,0 +1,19 @@
+This test checks to make sure that the appropriate targets are being made
+by default.  It specifically checks the DEFAULT_* and NO_DEFAULT options as
+well as appropriate behavior when none of these are used.
+
+The following documents exist and the default targets (made with no
+arguments to make) should create the following files (in addition to the
+standard auxileary files).
+
+NoDefault.tex:		-nothing-
+DefaultDvi.tex:		DefaultDvi.dvi
+DefaultPdf.tex:		DefaultPdf.pdf
+DefaultSafePdf.tex:	DefaultSafePDF.pdf, DefaultSafePdf.ps, DefaultSafePdf.dvi
+DefaultPs.tex:		DefaultPs.ps, DefaultPs.dvi
+
+Looking at the transpose, here are the files expected per extention.
+
+*.dvi:	DefaultDvi.dvi, DefaultSafePDF.dvi, DefaultPs.dvi
+*.pdf:	DefaultPdf.pdf, DefaultSafePDF.pdf
+*.ps:	DefaultPs.ps, DefaultSafePDF.ps
