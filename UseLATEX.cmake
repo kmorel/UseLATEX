@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.10.0
+# Version: 1.10.1
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -72,6 +72,9 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.10.1 Make convert program mandatory only if actually used (thanks to
+#       Julien Schueller).
 #
 # 1.10.0 Added NO_DEFAULT and DEFAULT_PS options.
 #       Fixed issue with cleaning files for LaTeX documents originating in
@@ -755,10 +758,10 @@ FUNCTION(LATEX_ADD_CONVERT_COMMAND
   IF (require_imagemagick_convert)
     IF (IMAGEMAGICK_CONVERT)
       SET (converter ${IMAGEMAGICK_CONVERT})
-    ELSE ()
+    ELSE (IMAGEMAGICK_CONVERT)
       MESSAGE(SEND_ERROR "Could not find convert program. Please download ImageMagick from http://www.imagemagick.org and install.")
-    ENDIF ()
-  ENDIF ()
+    ENDIF (IMAGEMAGICK_CONVERT)
+  ENDIF (require_imagemagick_convert)
 
   ADD_CUSTOM_COMMAND(OUTPUT ${output_path}
     COMMAND ${converter}
