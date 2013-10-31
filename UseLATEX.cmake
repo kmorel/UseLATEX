@@ -589,16 +589,17 @@ FUNCTION(LATEX_SETUP_VARIABLES)
   LATEX_WANTIT(PDFTOPS_CONVERTER pdftops)
   # MiKTeX calls latex2html htlatex
   IF (NOT ${LATEX2HTML_CONVERTER})
-    find_program(HTLATEX_CONVERTER
+    FIND_PROGRAM(HTLATEX_CONVERTER
       NAMES htlatex
       PATHS ${MIKTEX_BINARY_PATH}
             /usr/bin
     )
     IF (HTLATEX_CONVERTER)
-      SET (USING_HTLATEX TRUE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
-      SET (LATEX2HTML_CONVERTER HTLATEX_CONVERTER)
+      SET(USING_HTLATEX TRUE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
+      SET(LATEX2HTML_CONVERTER ${HTLATEX_CONVERTER}
+        CACHE FILEPATH "htlatex taking the place of latex2html" FORCE)
     ELSE (HTLATEX_CONVERTER)
-      SET (USING_HTLATEX FALSE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
+      SET(USING_HTLATEX FALSE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
     ENDIF (HTLATEX_CONVERTER)
   ENDIF (NOT ${LATEX2HTML_CONVERTER})
   LATEX_WANTIT(LATEX2HTML_CONVERTER latex2html)
