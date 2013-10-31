@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.10.1
+# Version: 1.10.2
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -72,6 +72,9 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.10.2 Use htlatex as a fallback when latex2html is not available (thanks
+#       to Tomasz Grzegurzko).
 #
 # 1.10.1 Make convert program mandatory only if actually used (thanks to
 #       Julien Schueller).
@@ -584,6 +587,20 @@ FUNCTION(LATEX_SETUP_VARIABLES)
   LATEX_WANTIT(DVIPS_CONVERTER dvips)
   LATEX_WANTIT(PS2PDF_CONVERTER ps2pdf)
   LATEX_WANTIT(PDFTOPS_CONVERTER pdftops)
+  # MiKTeX calls latex2html htlatex
+  IF (NOT ${LATEX2HTML_CONVERTER})
+    find_program(HTLATEX_CONVERTER
+      NAMES htlatex
+      PATHS ${MIKTEX_BINARY_PATH}
+            /usr/bin
+    )
+    IF (HTLATEX_CONVERTER)
+      SET (USING_HTLATEX TRUE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
+      SET (LATEX2HTML_CONVERTER HTLATEX_CONVERTER)
+    ELSE (HTLATEX_CONVERTER)
+      SET (USING_HTLATEX FALSE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
+    ENDIF (HTLATEX_CONVERTER)
+  ENDIF (NOT ${LATEX2HTML_CONVERTER})
   LATEX_WANTIT(LATEX2HTML_CONVERTER latex2html)
 
   SET(LATEX_COMPILER_FLAGS "-interaction=nonstopmode"
@@ -1271,11 +1288,21 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
   ENDIF (DVIPS_CONVERTER)
 
   IF (LATEX2HTML_CONVERTER)
-    ADD_CUSTOM_TARGET(${html_target}
-      ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
+    IF (USING_HTLATEX)
+      # htlatex places the output in a different location
+      SET (HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
+    ELSE (USING_HTLATEX)
+      SET (HTML_OUTPUT "${output_dir}/${LATEX_TARGET}/${LATEX_TARGET}.html")
+    ENDIF (USING_HTLATEX)
+    ADD_CUSTOM_COMMAND(OUTPUT ${HTML_OUTPUT}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
+      DEPENDS ${output_dir}/${LATEX_TARGET}.tex
       )
-    ADD_DEPENDENCIES(${html_target} ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
+    ADD_CUSTOM_TARGET(${html_target}
+      DEPENDS ${HTML_OUTPUT}
+      )
+    ADD_DEPENDENCIES(${html_target} ${dvi_target})
   ENDIF (LATEX2HTML_CONVERTER)
 
   SET_DIRECTORY_PROPERTIES(.
