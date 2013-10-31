@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.10.1}
+\newcommand{\UseLATEXVersion}{1.10.2}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -965,11 +965,9 @@ something like my-image.pdf.
   have problems with including image filenames with multiple extensions.
   For example, if you tried to include \textfile{my.image.pdf} with a
   command like
-
   \begin{CodeListing}
 \includegraphics{my.image}
   \end{CodeListing}
-
   then some versions of \latex will respond that the image extension
   \textfile{.image} is not recognized or that the file \textfile{my.image}
   is not found because it fails to look for files with valid extensions.
@@ -977,11 +975,9 @@ something like my-image.pdf.
   Although it is inadvisable (per Section~\ref{sec:IncoporatingImages}),
   you might try to get around the problem by specifying the extension like
   this.
-
   \begin{CodeListing}
 \includegraphics{my.image.pdf}
   \end{CodeListing}
-
   This might work, or it might just make \latex complain that it does not
   recognize images with extension \textfile{.image.pdf}.
 
@@ -1006,7 +1002,8 @@ something like my-image.pdf.
     \textprog{makeglossaries} and \bibtex commands.
   \item[Alin Elena] Suggestions on removing dependence on makeglossaries
     command.
-  \item[Myles English] Support for the \textlatexpackage{nomencl} package. 
+  \item[Myles English] Support for the \textlatexpackage{nomencl} package.
+  \item[Tomasz Grzegurzko] Support for htlatex.
   \item[\O{}ystein S. Haaland] Support for making glossaries.
   \item[Sven Klomp] Help with \synctex support.
   \item[Thimo Langbehn] Support for pstricks with the
