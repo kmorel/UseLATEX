@@ -769,23 +769,7 @@ CMake Error at UseLATEX.cmake:377 (MESSAGE):
   other problems that users can run into the created build files attempt to
   run the \textprog{convert} program.
 
-  A common error seen is 
-
-  \begin{CodeListing}
-Invalid Parameter - filename
-  \end{CodeListing}
-
-  This is probably because CMake has found the wrong \textprog{convert}
-  program. Windows is installed with a program named \textprog{convert} in
-  \textfile{\%SYSTEMROOT\%$\backslash$system32}. This \textprog{convert}
-  program is used to change the filesystem type on a hard drive. Since the
-  windows \textfile{convert} is in a system binary directory, it is usually
-  found in the path before the installed ImageMagick \textfile{convert}
-  program. (Don't get me started about the logic behind this.) Make sure
-  that the \textcmakevar{IMAGEMAGICK\_CONVERT} CMake variable is pointing
-  to the correct \textprog{convert} program.
-
-  Another common error is that \textprog{convert} not finding a file that
+  A common error is that \textprog{convert} not finding a file that
   is clearly there.
 
   \begin{CodeListing}
@@ -811,6 +795,24 @@ convert.exe: unable to open image `C:': Permission denied.
   executable. The easiest solution is to use a different build program
   (such as make or MSVC's IDE or a unix port of make). If anyone finds away
   around this problem, please contribute back.
+
+  Another possible error seen is
+
+  \begin{CodeListing}
+Invalid Parameter - filename
+  \end{CodeListing}
+
+  This is probably because CMake has found the wrong \textprog{convert}
+  program. Windows is installed with a program named \textprog{convert} in
+  \textfile{\%SYSTEMROOT\%$\backslash$system32}. This \textprog{convert}
+  program is used to change the filesystem type on a hard drive. Since the
+  windows \textfile{convert} is in a system binary directory, it is usually
+  found in the path before the installed ImageMagick \textfile{convert}
+  program. (Don't get me started about the logic behind this.) Make sure
+  that the \textcmakevar{IMAGEMAGICK\_CONVERT} CMake variable is pointing
+  to the correct \textprog{convert} program. Recent versions of \UseLATEX
+  should give a specific warning about this with instructions on how to fix
+  it.
 
   \subsection{How do I automate plot generation with command line programs?}
   \label{How_do_I_automate_plot_generation_with_command_line_programs}
@@ -997,6 +999,8 @@ something like my-image.pdf.
   Thanks to all of the following contributors.
 
   \begin{description}
+  \item[Martin Baute] Check for Windows version of convert being used
+    instead of ImageMagick's version.
   \item[Arnout Boelens] Example of using gri in conjunction with \latex.
   \item[Mark de Wever] Fixes for interactions between the
     \textprog{makeglossaries} and \bibtex commands.
