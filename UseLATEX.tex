@@ -11,6 +11,7 @@
 
 \usepackage{fancyvrb}
 \usepackage{color}
+\usepackage{hologo}
 \usepackage{xspace}
 
 \usepackage{hyperref}
@@ -38,6 +39,7 @@
 \else
   \newcommand*{\synctex}{SyncTeX\xspace}
 \fi
+\newcommand*{\xelatex}{\Hologo{XeLaTeX}\xspace}
 \newcommand*{\ald}{\textcmake{ADD\_LATEX\_DOCUMENT}\xspace}
 
 % Environments for listing CMake and other types of code.
@@ -699,6 +701,15 @@ ADD_LATEX_DOCUMENT(MyDoc.tex DEPENDS generated_file.tex)
   \href{http://finkcommander.sourceforge.net/}{FinkCommander}
   (\href{http://finkcommander.sourceforge.net/}{http://finkcommander.sourceforge.net/})
   is a similar although less active project.
+
+  \subsection{How do I process with \xelatex?}
+  \label{sec:How_do_I_process_with_XeLaTeX}
+
+  \UseLATEX was not designed with \xelatex in mind, but the
+  interface of that program is similar enough to \latex that you should be
+  able to use it. Simply change the \textcmakevar{PDFLATEX\_COMPILER} CMake
+  variable to the \textprog{xelatex} program and build the
+  \textmaketarget{pdf} target.
 
   \subsection{Why does \UseLATEX have to copy my tex files?}
   \label{sec:Why_does_UseLATEX_have_to_copy_my_tex_files}
