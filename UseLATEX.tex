@@ -40,6 +40,7 @@
   \newcommand*{\synctex}{SyncTeX\xspace}
 \fi
 \newcommand*{\xelatex}{\Hologo{XeLaTeX}\xspace}
+\newcommand*{\lualatex}{\Hologo{LuaLaTeX}\xspace}
 \newcommand*{\ald}{\textcmake{ADD\_LATEX\_DOCUMENT}\xspace}
 
 % Environments for listing CMake and other types of code.
@@ -709,6 +710,15 @@ ADD_LATEX_DOCUMENT(MyDoc.tex DEPENDS generated_file.tex)
   interface of that program is similar enough to \latex that you should be
   able to use it. Simply change the \textcmakevar{PDFLATEX\_COMPILER} CMake
   variable to the \textprog{xelatex} program and build the
+  \textmaketarget{pdf} target.
+
+  \subsection{How do I process with \lualatex?}
+  \label{sec:How_do_I_process_with_LuaLaTeX}
+
+  \UseLATEX was not designed with \lualatex in mind, but the
+  interface of that program is similar enough to \latex that you should be
+  able to use it. Simply change the \textcmakevar{PDFLATEX\_COMPILER} CMake
+  variable to the \textprog{lualatex} program and build the
   \textmaketarget{pdf} target.
 
   \subsection{Why does \UseLATEX have to copy my tex files?}
