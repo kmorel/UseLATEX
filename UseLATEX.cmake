@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.10.3
+# Version: 1.10.4
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004 Sandia Corporation.
@@ -72,6 +72,9 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.10.4 Copy font files to binary directory for packages that come with
+#       their own fonts.
 #
 # 1.10.3 Check for Windows version of convert being used instead of
 #       ImageMagick's version (thanks to Martin Baute).
@@ -1350,6 +1353,7 @@ FUNCTION(ADD_LATEX_DOCUMENT)
     LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.clo ${output_dir})
     LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.sty ${output_dir})
     LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.ist ${output_dir})
+    LATEX_COPY_GLOBBED_FILES(${CMAKE_CURRENT_SOURCE_DIR}/*.fd  ${output_dir})
 
     ADD_LATEX_TARGETS_INTERNAL()
   ENDIF (output_dir)
