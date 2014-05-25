@@ -451,8 +451,7 @@ FUNCTION(LATEX_MAKEGLOSSARIES)
             ${glossary_in}
           )
       ENDIF ("${xindy_output}" MATCHES "^Cannot locate xindy module for language (.+) in codepage (.+)\\.$")
-      #ENDIF ("${xindy_output}" MATCHES "Cannot locate xindy module for language (.+) in codepage (.+)\\.")
-      
+
     ELSE (use_xindy)
       MESSAGE("${MAKEINDEX_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}")
       EXEC_PROGRAM(${MAKEINDEX_COMPILER} ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
@@ -782,9 +781,9 @@ FUNCTION(LATEX_ADD_CONVERT_COMMAND
   IF (require_imagemagick_convert)
     IF (IMAGEMAGICK_CONVERT)
       IF (${IMAGEMAGICK_CONVERT} MATCHES "system32[/\\\\]convert\\.exe")
-	MESSAGE(SEND_ERROR "IMAGEMAGICK_CONVERT set to Window's convert.exe for changing file systems rather than ImageMagick's convert for changing image formats.  Please make sure ImageMagick is installed (available at http://www.imagemagick.org) and it's convert program is used for IMAGEMAGICK_CONVERT.  (It is helpful if ImageMagick's path is before the Windows system paths.)")
+        MESSAGE(SEND_ERROR "IMAGEMAGICK_CONVERT set to Window's convert.exe for changing file systems rather than ImageMagick's convert for changing image formats.  Please make sure ImageMagick is installed (available at http://www.imagemagick.org) and it's convert program is used for IMAGEMAGICK_CONVERT.  (It is helpful if ImageMagick's path is before the Windows system paths.)")
       ELSE (${IMAGEMAGICK_CONVERT} MATCHES "system32[/\\\\]convert\\.exe")
-	SET (converter ${IMAGEMAGICK_CONVERT})
+        SET (converter ${IMAGEMAGICK_CONVERT})
       ENDIF (${IMAGEMAGICK_CONVERT} MATCHES "system32[/\\\\]convert\\.exe")
     ELSE (IMAGEMAGICK_CONVERT)
       MESSAGE(SEND_ERROR "Could not find convert program. Please download ImageMagick from http://www.imagemagick.org and install.")

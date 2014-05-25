@@ -79,7 +79,7 @@
   ``\UseLATEX.'' Here are some of the things \UseLATEX handles:
 
   \begin{itemize}
-  \item Runs \latex multiple times to resolve links. 
+  \item Runs \latex multiple times to resolve links.
   \item Can run \textprog{bibtex}, \textprog{makeindex}, and
     \textprog{makeglossaries} to make bibliographies, indexes, and/or
     glossaries.
@@ -122,7 +122,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex)
   \textfile{MyDoc.tex}:
 
   \begin{description}
-    \item[\textmaketarget{dvi}] Creates \textfile{MyDoc.dvi}. 
+    \item[\textmaketarget{dvi}] Creates \textfile{MyDoc.dvi}.
     \item[\textmaketarget{pdf}] Creates \textfile{MyDoc.pdf} using
       \textprog{pdflatex}. Requires the \textcmakevar{PDFLATEX\_COMPILER}
       CMake variable to be set.
@@ -805,7 +805,7 @@ convert: unable to open image `filename'
   separated by the colon. Switch to the non-cygwin port of ImageMagick to
   fix this.
 
-  If you are using nmake, you may also see the following error: 
+  If you are using nmake, you may also see the following error:
 
   \begin{CodeListing}
 convert.exe: unable to open image `C:': Permission denied.
@@ -887,8 +887,8 @@ FOREACH(file ${GRI_FILES})
     ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
     ${changed_file_contents}
     )
-   
-  # Command to run gri   
+
+  # Command to run gri
   IF(GRI_COMPILE)
     ADD_CUSTOM_COMMAND(
       OUTPUT
@@ -897,14 +897,14 @@ FOREACH(file ${GRI_FILES})
         ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
         ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${DATA_DIR}
       COMMAND
-        ${GRI_COMPILE}  
+        ${GRI_COMPILE}
       ARGS
         -output
         ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
         ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
       )
   ENDIF(GRI_COMPILE)
-  # Make a list of all gri files (for ADD_LATEX_DOCUMENT depend) 
+  # Make a list of all gri files (for ADD_LATEX_DOCUMENT depend)
   SET(ALL_GRI_FILES ${ALL_GRI_FILES}
     ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
     )
@@ -1014,7 +1014,7 @@ something like my-image.pdf.
 
   %-----------------------------------------------------------------------------
 
-  
+
   \section{Acknowledgments}
 
   Thanks to all of the following contributors.
