@@ -86,7 +86,10 @@
 #
 #       Use "new" features available in CMake such as list and argument parsing.
 #
-#	Remove some code that has been deprecated for a while.
+#       Remove some code that has been deprecated for a while.
+#
+#       Mark variables for compiler and converter executables as advanced to
+#       match the more conventional CMake behavior.
 #
 # 1.10.5 Fix for Window's convert check (thanks to Martin Baute).
 #
@@ -743,15 +746,15 @@ function(latex_add_convert_command
     input_extension
     flags
     )
-  set (require_imagemagick_convert TRUE)
-  set (convert_flags "")
+  set(require_imagemagick_convert TRUE)
+  set(convert_flags "")
   if(${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
     # ImageMagick has broken eps to pdf conversion
     # use ps2pdf instead
     if(PS2PDF_CONVERTER)
-      set (require_imagemagick_convert FALSE)
-      set (converter ${PS2PDF_CONVERTER})
-      set (convert_flags -dEPSCrop ${PS2PDF_CONVERTER_FLAGS})
+      set(require_imagemagick_convert FALSE)
+      set(converter ${PS2PDF_CONVERTER})
+      set(convert_flags -dEPSCrop ${PS2PDF_CONVERTER_FLAGS})
     else()
       message(SEND_ERROR "Using postscript files with pdflatex requires ps2pdf for conversion.")
     endif()
@@ -760,15 +763,15 @@ function(latex_add_convert_command
     # color spaces and tends to unnecessarily rasterize.
     # use pdftops instead
     if(PDFTOPS_CONVERTER)
-      set (require_imagemagick_convert FALSE)
+      set(require_imagemagick_convert FALSE)
       set(converter ${PDFTOPS_CONVERTER})
       set(convert_flags -eps ${PDFTOPS_CONVERTER_FLAGS})
     else()
       message(STATUS "Consider getting pdftops from Poppler to convert PDF images to EPS images.")
-      set (convert_flags ${flags})
+      set(convert_flags ${flags})
     endif()
   else()
-    set (convert_flags ${flags})
+    set(convert_flags ${flags})
   endif()
 
   if(require_imagemagick_convert)
@@ -777,7 +780,7 @@ function(latex_add_convert_command
       if(${IMAGEMAGICK_CONVERT_LOWERCASE} MATCHES "system32[/\\\\]convert\\.exe")
         message(SEND_ERROR "IMAGEMAGICK_CONVERT set to Window's convert.exe for changing file systems rather than ImageMagick's convert for changing image formats.  Please make sure ImageMagick is installed (available at http://www.imagemagick.org) and its convert program is used for IMAGEMAGICK_CONVERT.  (It is helpful if ImageMagick's path is before the Windows system paths.)")
       else()
-        set (converter ${IMAGEMAGICK_CONVERT})
+        set(converter ${IMAGEMAGICK_CONVERT})
       endif()
     else()
       message(SEND_ERROR "Could not find convert program. Please download ImageMagick from http://www.imagemagick.org and install.")
@@ -823,7 +826,7 @@ function(latex_convert_image
       latex_add_convert_command(${output_dir}/${output_file}
         ${input_dir}/${input_file} ${output_extension} ${extension}
         "${convert_flags}")
-      set(output_file_list ${output_file_list} ${output_dir}/${output_file})
+      set(output_file_list ${output_dir}/${output_file})
     else()
       # As a shortcut, we can just copy the file.
       add_custom_command(OUTPUT ${output_dir}/${input_file}
@@ -831,7 +834,7 @@ function(latex_convert_image
         ARGS -E copy ${input_dir}/${input_file} ${output_dir}/${input_file}
         DEPENDS ${input_dir}/${input_file}
         )
-      set(output_file_list ${output_file_list} ${output_dir}/${input_file})
+      set(output_file_list ${output_dir}/${input_file})
     endif()
   else()
     set(do_convert TRUE)
@@ -850,7 +853,7 @@ function(latex_convert_image
       latex_add_convert_command(${output_dir}/${output_file}
         ${input_dir}/${input_file} ${output_extension} ${extension}
         "${convert_flags}")
-      set(output_file_list ${output_file_list} ${output_dir}/${output_file})
+      set(output_file_list ${output_dir}/${output_file})
     endif()
   endif()
 
@@ -884,17 +887,17 @@ function(latex_process_images dvi_outputs_var pdf_outputs_var)
       # Do conversions for dvi.
       latex_convert_image(output_files "${file}" .eps "${convert_flags}"
         "${LATEX_DVI_IMAGE_EXTENSIONS}" "${ARGN}")
-      set(dvi_outputs ${dvi_outputs} ${output_files})
+      list(APPEND dvi_outputs ${output_files})
 
       # Do conversions for pdf.
       if(is_raster)
         latex_convert_image(output_files "${file}" .png "${convert_flags}"
           "${LATEX_PDF_IMAGE_EXTENSIONS}" "${ARGN}")
-        set(pdf_outputs ${pdf_outputs} ${output_files})
+        list(APPEND pdf_outputs ${output_files})
       else()
         latex_convert_image(output_files "${file}" .pdf "${convert_flags}"
           "${LATEX_PDF_IMAGE_EXTENSIONS}" "${ARGN}")
-        set(pdf_outputs ${pdf_outputs} ${output_files})
+        list(APPEND pdf_outputs ${output_files})
       endif()
     else()
       message(WARNING "Could not find file ${CMAKE_CURRENT_SOURCE_DIR}/${file}.  Are you sure you gave relative paths to IMAGES?")
@@ -1089,7 +1092,7 @@ function(add_latex_targets_internal)
       file(GLOB files ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/*${extension})
       foreach(file ${files})
         latex_get_filename_component(filename ${file} NAME)
-        set(image_list ${image_list} ${dir}/${filename})
+        list(APPEND image_list ${dir}/${filename})
       endforeach(file)
     endforeach(extension)
   endforeach(dir)
@@ -1107,14 +1110,14 @@ function(add_latex_targets_internal)
   set(make_dvi_depends ${LATEX_DEPENDS} ${dvi_images})
   set(make_pdf_depends ${LATEX_DEPENDS} ${pdf_images})
   foreach(input ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
-    set(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
-    set(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
+    list(APPEND make_dvi_depends ${output_dir}/${input})
+    list(APPEND make_pdf_depends ${output_dir}/${input})
     if(${input} MATCHES "\\.tex$")
       # Dependent .tex files might have their own .aux files created.  Make
       # sure these get cleaned as well.  This might replicate the cleaning
       # of the main .aux file, which is OK.
       string(REGEX REPLACE "\\.tex$" "" input_we ${input})
-      set(auxiliary_clean_files ${auxiliary_clean_files}
+      list(APPEND auxiliary_clean_files
         ${output_dir}/${input_we}.aux
         ${output_dir}/${input}.aux
         )
@@ -1200,8 +1203,8 @@ function(add_latex_targets_internal)
     endif()
 
     foreach (bibfile ${LATEX_BIBFILES})
-      set(make_dvi_depends ${make_dvi_depends} ${output_dir}/${bibfile})
-      set(make_pdf_depends ${make_pdf_depends} ${output_dir}/${bibfile})
+      list(APPEND make_dvi_depends ${output_dir}/${bibfile})
+      list(APPEND make_pdf_depends ${output_dir}/${bibfile})
     endforeach (bibfile ${LATEX_BIBFILES})
   else()
     if(LATEX_MULTIBIB_NEWCITES)
@@ -1319,9 +1322,9 @@ function(add_latex_targets_internal)
   if(LATEX2HTML_CONVERTER)
     if(USING_HTLATEX)
       # htlatex places the output in a different location
-      set (HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
+      set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
     else()
-      set (HTML_OUTPUT "${output_dir}/${LATEX_TARGET}/${LATEX_TARGET}.html")
+      set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}/${LATEX_TARGET}.html")
     endif()
     add_custom_command(OUTPUT ${HTML_OUTPUT}
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
