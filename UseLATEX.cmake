@@ -908,10 +908,6 @@ function(latex_process_images dvi_outputs_var pdf_outputs_var)
   set(${pdf_outputs_var} ${pdf_outputs} PARENT_SCOPE)
 endfunction(latex_process_images)
 
-function(add_latex_images)
-  message(SEND_ERROR "The ADD_LATEX_IMAGES function is deprecated.  Image directories are specified with LATEX_ADD_DOCUMENT.")
-endfunction(add_latex_images)
-
 function(latex_copy_globbed_files pattern dest)
   file(GLOB file_list ${pattern})
   foreach(in_file ${file_list})
@@ -972,7 +968,6 @@ function(parse_add_latex_arguments command latex_main_input)
   set(options
     USE_INDEX
     USE_GLOSSARY
-    USE_GLOSSARIES
     USE_NOMENCL
     DEFAULT_PDF
     DEFAULT_SAFEPDF
@@ -996,12 +991,6 @@ function(parse_add_latex_arguments command latex_main_input)
 
   if(LATEX_UNPARSED_ARGUMENTS)
     latex_usage(${command} "Invalid or depricated arguments: ${LATEX_UNPARSED_ARGUMENTS}")
-  endif()
-
-  # Backward compatibility between 1.6.0 and 1.6.1.
-  # Deprecate
-  if(LATEX_USE_GLOSSARIES)
-    set(LATEX_USE_GLOSSARY TRUE CACHE INTERNAL "" FORCE)
   endif()
 
   # Capture the first argument, which is the main LaTeX input.
