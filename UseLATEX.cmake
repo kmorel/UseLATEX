@@ -968,7 +968,7 @@ endfunction(latex_usage command message)
 # Parses arguments to add_latex_document and ADD_LATEX_TARGETS and sets the
 # variables LATEX_TARGET, LATEX_IMAGE_DIR, LATEX_BIBFILES, LATEX_DEPENDS, and
 # LATEX_INPUTS.
-function(parse_add_latex_arguments command)
+function(parse_add_latex_arguments command latex_main_input)
   set(options
     USE_INDEX
     USE_GLOSSARY
@@ -994,17 +994,6 @@ function(parse_add_latex_arguments command)
   cmake_parse_arguments(
     LATEX "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  # The first argument is the target latex file.
-  if(LATEX_UNPARSED_ARGUMENTS)
-    list(GET LATEX_UNPARSED_ARGUMENTS 0 latex_main_input)
-    list(REMOVE_AT LATEX_UNPARSED_ARGUMENTS 0)
-    latex_get_filename_component(latex_target ${latex_main_input} NAME_WE)
-    set(LATEX_MAIN_INPUT ${latex_main_input} CACHE INTERNAL "" FORCE)
-    set(LATEX_TARGET ${latex_target} CACHE INTERNAL "" FORCE)
-  else()
-    latex_usage(${command} "No tex file target given to ${command}.")
-  endif()
-
   if(LATEX_UNPARSED_ARGUMENTS)
     latex_usage(${command} "Invalid or depricated arguments: ${LATEX_UNPARSED_ARGUMENTS}")
   endif()
@@ -1014,6 +1003,11 @@ function(parse_add_latex_arguments command)
   if(LATEX_USE_GLOSSARIES)
     set(LATEX_USE_GLOSSARY TRUE CACHE INTERNAL "" FORCE)
   endif()
+
+  # Capture the first argument, which is the main LaTeX input.
+  latex_get_filename_component(latex_target ${latex_main_input} NAME_WE)
+  set(LATEX_MAIN_INPUT ${latex_main_input} PARENT_SCOPE)
+  set(LATEX_TARGET ${latex_target} PARENT_SCOPE)
 
   # Propagate the result variables to the caller
   foreach(arg_name ${options} ${oneValueArgs} ${multiValueArgs})
@@ -1347,17 +1341,17 @@ function(add_latex_targets_internal)
     )
 endfunction(add_latex_targets_internal)
 
-function(add_latex_targets)
+function(add_latex_targets latex_main_input)
   latex_get_output_path(output_dir)
-  parse_add_latex_arguments(ADD_LATEX_TARGETS ${ARGV})
+  parse_add_latex_arguments(ADD_LATEX_TARGETS ${latex_main_input} ${ARGN})
 
   add_latex_targets_internal()
 endfunction(add_latex_targets)
 
-function(add_latex_document)
+function(add_latex_document latex_main_input)
   latex_get_output_path(output_dir)
   if(output_dir)
-    parse_add_latex_arguments(add_latex_document ${ARGV})
+    parse_add_latex_arguments(add_latex_document ${latex_main_input} ${ARGN})
 
     latex_copy_input_file(${LATEX_MAIN_INPUT})
 
