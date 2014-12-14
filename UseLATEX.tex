@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{1.10.5}
+\newcommand{\UseLATEXVersion}{2.0.0}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -41,7 +41,7 @@
 \fi
 \newcommand*{\xelatex}{\Hologo{XeLaTeX}\xspace}
 \newcommand*{\lualatex}{\Hologo{LuaLaTeX}\xspace}
-\newcommand*{\ald}{\textcmake{ADD\_LATEX\_DOCUMENT}\xspace}
+\newcommand*{\ald}{\textcmake{add\_latex\_document}\xspace}
 
 % Environments for listing CMake and other types of code.
 \definecolor{listingframecolor}{cmyk}{0,0,0,0.25}
@@ -112,10 +112,10 @@
   simple \textfile{CMakeLists.txt}.
 
   \begin{CodeListing}
-PROJECT(MyDoc NONE)
+project(MyDoc NONE)
 
-INCLUDE(UseLATEX.cmake)
-ADD_LATEX_DOCUMENT(MyDoc.tex)
+include(UseLATEX.cmake)
+add_latex_document(MyDoc.tex)
   \end{CodeListing}
 
   The \ald adds the following targets to create a readable document from
@@ -163,7 +163,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex)
   the \ald command.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib)
+add_latex_document(MyDoc.tex BIBFILES MyDoc.bib)
   \end{CodeListing}
 
   This will automatically add targets to build your bib file and link it
@@ -191,7 +191,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex BIBFILES MyDoc.bib)
   macro to point to them. \UseLATEX will take care of the rest.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   )
@@ -202,7 +202,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   after the \textcmake{IMAGE\_DIRS} command.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS icons figures
   )
@@ -212,14 +212,14 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   \textcmake{IMAGES} option.
 
   \begin{CodeListing}
-SET(MyDocImages
+set(MyDocImages
   logo.eps
   icons/next.png
   icons/previous.png
   figures/flowchart.eps
   figures/team.jpeg
   )
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   IMAGES ${MyDocImages}
   )
   \end{CodeListing}
@@ -279,7 +279,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   \textcmake{DEFAULT\_PDF} option to \ald:
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   DEFAULT_PDF
@@ -292,7 +292,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   option to \ald:
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   DEFAULT_SAFEPDF
@@ -303,7 +303,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   \textcmake{DEFAULT\_PS} option.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   DEFAULT_PS
@@ -321,7 +321,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   option to \ald.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   NO_DEFAULT
@@ -388,7 +388,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   \textprog{makeindex} will automatically be added to the build.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   USE_INDEX
@@ -411,7 +411,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   handled for you.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   USE_GLOSSARY
@@ -434,7 +434,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   build the nomenclature.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   USE_NOMENCL
@@ -495,7 +495,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   arguments, respectively.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   BIBFILES own.bib submitted.bib techreports.bib theses.bib
   MULTIBIB_NEWCITES own submitted internal
   )
@@ -523,7 +523,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   target tex file. Build dependencies to these files is also established.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   INPUTS Chapter1.tex Chapter2.tex Chapter3.tex Chapter4.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
@@ -546,7 +546,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   \textcmake{CONFIGURE} argument to \ald.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   INPUTS Chapter1.tex Chapter2.tex Chapter3.tex Chapter4.tex
   CONFIGURE MyDoc.tex
   BIBFILES MyDoc.bib
@@ -566,7 +566,7 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   \textcmake{INPUTS} argument.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   INPUTS Ch1Config.tex Ch1.tex Ch2Config.tex
          Ch2.tex Ch3Config Ch3.tex
   CONFIGURE Ch1Config.tex Ch2Config.tex Ch3Config.tex
@@ -599,8 +599,8 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   do this, use the \textcmake{MANGLE\_TARGET\_NAMES} option.
 
   \begin{CodeListing}
-ADD_LATEX_DOCUMENT(MyDoc1.tex MANGLE_TARGET_NAMES)
-ADD_LATEX_DOCUMENT(MyDoc2.tex MANGLE_TARGET_NAMES)
+add_latex_document(MyDoc1.tex MANGLE_TARGET_NAMES)
+add_latex_document(MyDoc2.tex MANGLE_TARGET_NAMES)
   \end{CodeListing}
 
   In the example above, the first call to \ald will create targets named
@@ -613,12 +613,12 @@ ADD_LATEX_DOCUMENT(MyDoc2.tex MANGLE_TARGET_NAMES)
   the targets created by \ald
 
   \begin{CodeListing}
-ADD_CUSTOM_TARGET(dvi)
-ADD_DEPENDENCIES(MyDoc1_dvi MyDoc2_dvi)
-ADD_CUSTOM_TARGET(pdf)
-ADD_DEPENDENCIES(MyDoc1_pdf MyDoc2_pdf)
-ADD_CUSTOM_TARGET(ps)
-ADD_DEPENDENCIES(MyDoc1_ps MyDoc2_ps)
+add_custom_target(dvi)
+add_dependencies(MyDoc1_dvi MyDoc2_dvi)
+add_custom_target(pdf)
+add_dependencies(MyDoc1_pdf MyDoc2_pdf)
+add_custom_target(ps)
+add_dependencies(MyDoc1_ps MyDoc2_ps)
   \end{CodeListing}
 
   \subsection{Identifying Dependent Files}
@@ -635,14 +635,14 @@ ADD_DEPENDENCIES(MyDoc1_ps MyDoc2_ps)
   function to get the output path.
 
   \begin{CodeListing}
-LATEX_GET_OUTPUT_PATH(output_dir)
+latex_get_output_path(output_dir)
 
-ADD_CUSTOM_COMMAND(OUTPUT ${output_dir}/generated_file.tex
+add_custom_command(OUTPUT ${output_dir}/generated_file.tex
   COMMAND tex_file_generate_exe
   ARGS ${output_dir}/generated_file.tex
   )
 
-ADD_LATEX_DOCUMENT(MyDoc.tex DEPENDS generated_file.tex)
+add_latex_document(MyDoc.tex DEPENDS generated_file.tex)
   \end{CodeListing}
 
   %-----------------------------------------------------------------------------
@@ -864,32 +864,32 @@ Invalid Parameter - filename
 
   \begin{CodeListing}
 # Set GRI executable
-SET(GRI_COMPILE "/usr/bin/gri")
+set(GRI_COMPILE "/usr/bin/gri")
 # Set the location of data files
-SET(DATA_DIR data)
+set(DATA_DIR data)
 # Set the location of the directory for image files
-SET(IMAGE_DIR graphics)
+set(IMAGE_DIR graphics)
 
 # Get a list of gri files
-FILE(GLOB_RECURSE GRI_FILES "*.gri")
+file(GLOB_RECURSE GRI_FILES "*.gri")
 
-FOREACH(file ${GRI_FILES})
+foreach(file ${GRI_FILES})
   GET_FILENAME_COMPONENT(basename "${file}" NAME_WE)
   # Replace stings in gri file so data files can be found
-  FILE(READ
+  file(READ
     ${CMAKE_CURRENT_SOURCE_DIR}/${IMAGE_DIR}/${basename}.gri
     file_contents
     )
-  STRING(REPLACE "${DATA_DIR}" "${IMAGE_DIR}/${DATA_DIR}"
+  string(REPLACE "${DATA_DIR}" "${IMAGE_DIR}/${DATA_DIR}"
     changed_file_contents ${file_contents}
     )
-  FILE(WRITE
+  file(WRITE
     ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
     ${changed_file_contents}
     )
 
   # Command to run gri
-  IF(GRI_COMPILE)
+  if(GRI_COMPILE)
     ADD_CUSTOM_COMMAND(
       OUTPUT
         ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
@@ -903,15 +903,15 @@ FOREACH(file ${GRI_FILES})
         ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
         ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.gri
       )
-  ENDIF(GRI_COMPILE)
+  endif()
   # Make a list of all gri files (for ADD_LATEX_DOCUMENT depend)
-  SET(ALL_GRI_FILES ${ALL_GRI_FILES}
+  set(ALL_GRI_FILES ${ALL_GRI_FILES}
     ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${basename}.eps
     )
-ENDFOREACH(file)
+endforeach(file)
 
 # Copy over all data files needed to generate gri graphs
-ADD_CUSTOM_COMMAND(
+add_custom_command(
   OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${DATA_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${IMAGE_DIR}/${DATA_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -919,7 +919,7 @@ ADD_CUSTOM_COMMAND(
           ${CMAKE_CURRENT_BINARY_DIR}/${IMAGE_DIR}/${DATA_DIR}
   )
 
-ADD_LATEX_DOCUMENT(MyDoc.tex
+add_latex_document(MyDoc.tex
   IMAGE_DIRS ${IMAGE_DIR}
   DEPENDS ${ALL_GRI_FILES}
   )
@@ -959,11 +959,11 @@ ADD_LATEX_DOCUMENT(MyDoc.tex
   \textfile{CMakeLists.txt} file.  For example:
 
   \begin{CodeListing}
-SET(LATEX_COMPILER_FLAGS
+set(LATEX_COMPILER_FLAGS
   "-interaction=nonstopmode --enable-write18"
   CACHE STRING "Flags passed to latex."
   )
-INCLUDE(UseLATEX.cmake)
+include(UseLATEX.cmake)
   \end{CodeListing}
 
   The disadvantage of this latter approach is the reduction of portability.
