@@ -86,6 +86,8 @@
 #
 #       Use "new" features available in CMake such as list and argument parsing.
 #
+#	Remove some code that has been deprecated for a while.
+#
 # 1.10.5 Fix for Window's convert check (thanks to Martin Baute).
 #
 # 1.10.4 Copy font files to binary directory for packages that come with
@@ -228,6 +230,11 @@
 # 0.4.0 First version posted to CMake Wiki.
 #
 
+if(__USE_LATEX_INCLUDED)
+  return()
+endif()
+set(__USE_LATEX_INCLUDED TRUE)
+
 #############################################################################
 # Find the location of myself while originally executing.  If you do this
 # inside of a macro, it will recode where the macro was invoked.
@@ -240,6 +247,8 @@ set(LATEX_USE_LATEX_LOCATION ${CMAKE_CURRENT_LIST_FILE}
 # Generic helper functions
 #############################################################################
 
+include(CMakeParseArguments)
+
 function(latex_list_contains var value)
   set(input_list ${ARGN})
   list(FIND input_list "${value}" index)
@@ -249,37 +258,6 @@ function(latex_list_contains var value)
     set(${var} PARENT_SCOPE)
   endif()
 endfunction(latex_list_contains)
-
-# Parse function arguments.  Variables containing the results are placed
-# in the global scope for historical reasons.
-function(latex_parse_arguments prefix arg_names option_names)
-  set(DEFAULT_ARGS)
-  foreach(arg_name ${arg_names})
-    set(${prefix}_${arg_name} CACHE INTERNAL "${prefix} argument" FORCE)
-  endforeach(arg_name)
-  foreach(option ${option_names})
-    set(${prefix}_${option} CACHE INTERNAL "${prefix} option" FORCE)
-  endforeach(option)
-
-  set(current_arg_name DEFAULT_ARGS)
-  set(current_arg_list)
-  foreach(arg ${ARGN})
-    latex_list_contains(is_arg_name ${arg} ${arg_names})
-    latex_list_contains(is_option ${arg} ${option_names})
-    if(is_arg_name)
-      set(${prefix}_${current_arg_name} ${current_arg_list}
-        CACHE INTERNAL "${prefix} argument" FORCE)
-      set(current_arg_name ${arg})
-      set(current_arg_list)
-    elseif(is_option)
-      set(${prefix}_${arg} TRUE CACHE INTERNAL "${prefix} option" FORCE)
-    else()
-      set(current_arg_list ${current_arg_list} ${arg})
-    endif()
-  endforeach(arg)
-  set(${prefix}_${current_arg_name} ${current_arg_list}
-    CACHE INTERNAL "${prefix} argument" FORCE)
-endfunction(latex_parse_arguments)
 
 # Match the contents of a file to a regular expression.
 function(latex_file_match variable filename regexp default)
@@ -988,17 +966,35 @@ endfunction(latex_usage command message)
 # variables LATEX_TARGET, LATEX_IMAGE_DIR, LATEX_BIBFILES, LATEX_DEPENDS, and
 # LATEX_INPUTS.
 function(parse_add_latex_arguments command)
-  latex_parse_arguments(
-    LATEX
-    "BIBFILES;MULTIBIB_NEWCITES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
-    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;USE_NOMENCL;DEFAULT_PDF;DEFAULT_SAFEPDF;DEFAULT_PS;NO_DEFAULT;MANGLE_TARGET_NAMES"
-    ${ARGN}
+  set(options
+    USE_INDEX
+    USE_GLOSSARY
+    USE_GLOSSARIES
+    USE_NOMENCL
+    DEFAULT_PDF
+    DEFAULT_SAFEPDF
+    DEFAULT_PS
+    NO_DEFAULT
+    MANGLE_TARGET_NAMES
     )
+  set(oneValueArgs
+    )
+  set(multiValueArgs
+    BIBFILES
+    MULTIBIB_NEWCITES
+    INPUTS
+    IMAGE_DIRS
+    IMAGES
+    CONFIGURE
+    DEPENDS
+    )
+  cmake_parse_arguments(
+    LATEX "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   # The first argument is the target latex file.
-  if(LATEX_DEFAULT_ARGS)
-    list(GET LATEX_DEFAULT_ARGS 0 latex_main_input)
-    list(REMOVE_AT LATEX_DEFAULT_ARGS 0)
+  if(LATEX_UNPARSED_ARGUMENTS)
+    list(GET LATEX_UNPARSED_ARGUMENTS 0 latex_main_input)
+    list(REMOVE_AT LATEX_UNPARSED_ARGUMENTS 0)
     latex_get_filename_component(latex_target ${latex_main_input} NAME_WE)
     set(LATEX_MAIN_INPUT ${latex_main_input} CACHE INTERNAL "" FORCE)
     set(LATEX_TARGET ${latex_target} CACHE INTERNAL "" FORCE)
@@ -1006,14 +1002,21 @@ function(parse_add_latex_arguments command)
     latex_usage(${command} "No tex file target given to ${command}.")
   endif()
 
-  if(LATEX_DEFAULT_ARGS)
-    latex_usage(${command} "Invalid or depricated arguments: ${LATEX_DEFAULT_ARGS}")
+  if(LATEX_UNPARSED_ARGUMENTS)
+    latex_usage(${command} "Invalid or depricated arguments: ${LATEX_UNPARSED_ARGUMENTS}")
   endif()
 
   # Backward compatibility between 1.6.0 and 1.6.1.
+  # Deprecate
   if(LATEX_USE_GLOSSARIES)
     set(LATEX_USE_GLOSSARY TRUE CACHE INTERNAL "" FORCE)
   endif()
+
+  # Propagate the result variables to the caller
+  foreach(arg_name ${options} ${oneValueArgs} ${multiValueArgs})
+    set(var_name LATEX_${arg_name})
+    set(${var_name} ${${var_name}} PARENT_SCOPE)
+  endforeach(arg_name)
 endfunction(parse_add_latex_arguments)
 
 function(add_latex_targets_internal)
