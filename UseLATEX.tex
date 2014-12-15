@@ -612,34 +612,40 @@ add_latex_document(MyDoc.tex
 
   The most common use for \UseLATEX is to build a single document, such as
   a paper you are working on. However, some use cases involve building
-  several documents at one time. To do this, you must call \ald multiple
-  times. However, if you do this, the dvi, pdf, etc. targets will be
-  generated multiple times, and that is illegal in CMake.  To get around
-  this, you need to mangle the names of the targets that \ald creates. To
-  do this, use the \textcmake{MANGLE\_TARGET\_NAMES} option.
+  several documents at one time.
+
+  Multiple \latex documents in the same CMake project can be created by
+  simply calling \ald multiple times. Each call to \ald will create its own
+  set of unique targets that will be added as dependencies of
+  \textmaketarget{dvi}, \textmaketarget{pdf}, \textmaketarget{ps},
+  \textmaketarget{safepdf} and \textmaketarget{html}.
+
+  Consider the following code.
 
   \begin{CodeListing}
-add_latex_document(MyDoc1.tex MANGLE_TARGET_NAMES)
-add_latex_document(MyDoc2.tex MANGLE_TARGET_NAMES)
+add_latex_document(MyDoc1.tex)
+add_latex_document(MyDoc2.tex)
   \end{CodeListing}
 
   In the example above, the first call to \ald will create targets named
   \textmaketarget{MyDoc1\_dvi}, \textmaketarget{MyDoc1\_pdf},
   \textmaketarget{MyDoc1\_ps}, etc. whereas the second call will create
-  targets named \textmaketarget{MyDoc2\_*}.
+  targets named \textmaketarget{MyDoc2\_*}. Calling \textmaketarget{dvi},
+  \textmaketarget{pdf}, etc. will execute the respective targets for the
+  two documents.
 
-  If you still want the simple, short targets to build all of the
-  documents, you can add them yourself with custom targets that depend on
-  the targets created by \ald
+  The \textcmake{EXCLUDE\_FROM\_ALL} option suppresses these links to the
+  document's targets.
 
   \begin{CodeListing}
-add_custom_target(dvi)
-add_dependencies(MyDoc1_dvi MyDoc2_dvi)
-add_custom_target(pdf)
-add_dependencies(MyDoc1_pdf MyDoc2_pdf)
-add_custom_target(ps)
-add_dependencies(MyDoc1_ps MyDoc2_ps)
+add_latex_document(MyDoc1.tex)
+add_latex_document(MyDoc2.tex)
+add_latex_document(MyDoc3.tex EXCLUDE_FROM_ALL)
   \end{CodeListing}
+
+  In this augmented example, MyDoc1 and MyDoc2 are built when targets such
+  as \textmaketarget{dvi} and \textmaketarget{pdf} are called, but MyDoc3
+  is not.
 
   \subsection{Identifying Dependent Files}
   \label{sec:IdentifyingDependentFiles}

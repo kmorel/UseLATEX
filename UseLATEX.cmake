@@ -40,35 +40,35 @@
 #       that are needed to compile the latex target.
 #
 #       The following targets are made:
-#               dvi: Makes <name>.dvi
-#               pdf: Makes <name>.pdf using pdflatex.
-#               safepdf: Makes <name>.pdf using ps2pdf.  If using the default
-#                       program arguments, this will ensure all fonts are
-#                       embedded and no lossy compression has been performed
-#                       on images.
-#               ps: Makes <name>.ps
-#               html: Makes <name>.html
-#               auxclean: Deletes <name>.aux and other auxiliary files.
+#               name_dvi: Makes <name>.dvi
+#               name_pdf: Makes <name>.pdf using pdflatex.
+#               name_safepdf: Makes <name>.pdf using ps2pdf.  If using the
+#                       default program arguments, this will ensure all fonts
+#                       are embedded and no lossy compression has been
+#                       performed on images.
+#               name_ps: Makes <name>.ps
+#               name_html: Makes <name>.html
+#               name_auxclean: Deletes <name>.aux and other auxiliary files.
 #                       This is sometimes necessary if a LaTeX error occurs
 #                       and writes a bad aux file.  Unlike the regular clean
 #                       target, it does not delete other input files, such as
 #                       converted images, to save time on the rebuild.
 #
-#       Unless the EXCLUDE_FROM_ALL option is given, one of these targets are
-#       added to the ALL target and built by default. Which target is
+#       Unless the EXCLUDE_FROM_ALL option is given, one of these targets
+#       are added to the ALL target and built by default. Which target is
 #       determined by the LATEX_DEFAULT_BUILD CMake variable. See the
 #       documentation of that variable for more details.
 #
-#       CHANGE THIS DOCUMENTATION!!!!!!
-#       If the argument MANGLE_TARGET_NAMES is given, then each of the
-#       target names above will be mangled with the <tex_file> name.  This
-#       is to make the targets unique if add_latex_document is called for
-#       multiple documents.  If the argument USE_INDEX is given, then
-#       commands to build an index are made.  If the argument USE_GLOSSARY
-#       is given, then commands to build a glossary are made.  If the
-#       argument MULTIBIB_NEWCITES is given, then additional bibtex calls
-#       are added to the build to support the extra auxiliary files created
-#       with the \newcite command in the multibib package.
+#       Also unless the EXCLUDE_FROM_ALL option is given, all these targets
+#       are added as dependencies to targets named dvi, pdf, safepdf, ps,
+#       html, and auxclean, respectively.
+#
+#       If the argument USE_INDEX is given, then commands to build an index
+#       are made.  If the argument USE_GLOSSARY is given, then commands to
+#       build a glossary are made.  If the argument MULTIBIB_NEWCITES is
+#       given, then additional bibtex calls are added to the build to
+#       support the extra auxiliary files created with the \newcite command
+#       in the multibib package.
 #
 # History:
 #
