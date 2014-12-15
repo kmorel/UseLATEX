@@ -21,7 +21,8 @@
 #                    [DEPENDS] <tex_files>
 #                    [MULTIBIB_NEWCITES] <suffix_list>
 #                    [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
-#		     [EXCLUDE_FROM_ALL]
+#                    [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]
+#                    [EXCLUDE_FROM_ALL]
 #                    [MANGLE_TARGET_NAMES])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
@@ -54,7 +55,7 @@
 #                       target, it does not delete other input files, such as
 #                       converted images, to save time on the rebuild.
 #
-#	THIS DOCUMENTATION NEEDS TO CHANGE!!!!!
+#       THIS DOCUMENTATION NEEDS TO CHANGE!!!!!
 #       The dvi target is added to the ALL.  That is, it will be the target
 #       built by default.  If the DEFAULT_PDF argument is given, then the
 #       pdf target will be the default instead of dvi.  Likewise,
@@ -92,7 +93,8 @@
 #       Mark variables for compiler and converter executables as advanced to
 #       match the more conventional CMake behavior.
 #
-#       Change how default builds are specified.
+#       Change how default builds are specified and add the ability to force
+#       a particular build.
 #
 # 1.10.5 Fix for Window's convert check (thanks to Martin Baute).
 #
@@ -972,7 +974,7 @@ endfunction(latex_copy_input_file)
 
 function(latex_usage command message)
   message(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [EXCLUDE_FROM_ALL]\n           [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]\n           [EXCLUDE_FROM_ALL]\n           [MANGLE_TARGET_NAMES])"
     )
 endfunction(latex_usage command message)
 
@@ -984,6 +986,9 @@ function(parse_add_latex_arguments command latex_main_input)
     USE_INDEX
     USE_GLOSSARY
     USE_NOMENCL
+    FORCE_PDF
+    FORCE_DVI
+    FORCE_HTML
     EXCLUDE_FROM_ALL
     MANGLE_TARGET_NAMES
     )
@@ -1255,57 +1260,85 @@ function(add_latex_targets_internal)
       )
   endif()
 
-  # Add commands and targets for building dvi outputs.
-  add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.dvi
-    COMMAND ${make_dvi_command}
-    DEPENDS ${make_dvi_depends}
-    )
-  add_custom_target(${dvi_target} DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
+  # Capture the default build.
+  string(TOLOWER "${LATEX_DEFAULT_BUILD}" default_build)
+
+  if((NOT LATEX_FORCE_PDF) AND (NOT LATEX_FORCE_DVI) AND (NOT LATEX_FORCE_HTML))
+    set(no_force TRUE)
+  endif()
 
   # Add commands and targets for building pdf outputs (with pdflatex).
-  if(PDFLATEX_COMPILER)
-    add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.pdf
-      COMMAND ${make_pdf_command}
-      DEPENDS ${make_pdf_depends}
-      )
-    add_custom_target(${pdf_target} DEPENDS ${output_dir}/${LATEX_TARGET}.pdf)
-  endif()
+  if(LATEX_FORCE_PDF OR no_force)
+    if(LATEX_FORCE_PDF)
+      set(default_build pdf)
+    endif()
 
-  if(DVIPS_CONVERTER)
-    add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.ps
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
-      DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-    add_custom_target(${ps_target} DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
-    if(PS2PDF_CONVERTER)
-      # Since both the pdf and safepdf targets have the same output, we
-      # cannot properly do the dependencies for both.  When selecting safepdf,
-      # simply force a recompile every time.
-      add_custom_target(${safepdf_target}
-        ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
-	DEPENDS ${ps_target}
+    if(PDFLATEX_COMPILER)
+      add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.pdf
+        COMMAND ${make_pdf_command}
+        DEPENDS ${make_pdf_depends}
         )
+      add_custom_target(${pdf_target} DEPENDS ${output_dir}/${LATEX_TARGET}.pdf)
     endif()
   endif()
 
-  if(LATEX2HTML_CONVERTER)
-    if(USING_HTLATEX)
-      # htlatex places the output in a different location
-      set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
-    else()
-      set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}/${LATEX_TARGET}.html")
+  # Add commands and targets for building dvi outputs.
+  if(LATEX_FORCE_DVI OR LATEX_FORCE_HTML OR no_force)
+    if(LATEX_FORCE_DVI)
+      if((NOT default_build STREQUAL dvi) AND
+          (NOT default_build STREQUAL ps) AND
+          (NOT default_build STREQUAL safepdf))
+        set(default_build dvi)
+      endif()
     endif()
-    add_custom_command(OUTPUT ${HTML_OUTPUT}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
-      DEPENDS ${output_dir}/${LATEX_TARGET}.tex
+
+    add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.dvi
+      COMMAND ${make_dvi_command}
+      DEPENDS ${make_dvi_depends}
       )
-    add_custom_target(${html_target} DEPENDS ${HTML_OUTPUT} ${dvi_target})
+    add_custom_target(${dvi_target} DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
+
+    if(DVIPS_CONVERTER)
+      add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.ps
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
+        DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
+      add_custom_target(${ps_target} DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+      if(PS2PDF_CONVERTER)
+        # Since both the pdf and safepdf targets have the same output, we
+        # cannot properly do the dependencies for both.  When selecting safepdf,
+        # simply force a recompile every time.
+        add_custom_target(${safepdf_target}
+          ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
+          DEPENDS ${ps_target}
+          )
+      endif()
+    endif()
+  endif()
+
+  if(LATEX_FORCE_HTML OR no_force)
+    if (LATEX_FORCE_HTML)
+      set(default_build html)
+    endif()
+
+    if(LATEX2HTML_CONVERTER)
+      if(USING_HTLATEX)
+        # htlatex places the output in a different location
+        set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
+      else()
+        set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}/${LATEX_TARGET}.html")
+      endif()
+      add_custom_command(OUTPUT ${HTML_OUTPUT}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+          ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
+        DEPENDS ${output_dir}/${LATEX_TARGET}.tex
+        )
+      add_custom_target(${html_target} DEPENDS ${HTML_OUTPUT} ${dvi_target})
+    endif()
   endif()
 
   # Set default targets.
-  string(TOLOWER "${LATEX_DEFAULT_BUILD}" default_build)
   if("${default_build}" STREQUAL "pdf")
     add_custom_target(${LATEX_TARGET} DEPENDS ${pdf_target})
   elseif("${default_build}" STREQUAL "dvi")
