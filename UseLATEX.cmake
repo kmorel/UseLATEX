@@ -55,13 +55,10 @@
 #                       target, it does not delete other input files, such as
 #                       converted images, to save time on the rebuild.
 #
-#       THIS DOCUMENTATION NEEDS TO CHANGE!!!!!
-#       The dvi target is added to the ALL.  That is, it will be the target
-#       built by default.  If the DEFAULT_PDF argument is given, then the
-#       pdf target will be the default instead of dvi.  Likewise,
-#       DEFAULT_SAFEPDF sets the default target to safepdf.  If NO_DEFAULT
-#       is specified, then no target will be added to ALL, which is
-#       convenient when including LaTeX documentation with something else.
+#	Unless the EXCLUDE_FROM_ALL option is given, one of these targets are
+#	added to the ALL target and built by default. Which target is
+#	determined by the LATEX_DEFAULT_BUILD CMake variable. See the
+#	documentation of that variable for more details.
 #
 #       If the argument MANGLE_TARGET_NAMES is given, then each of the
 #       target names above will be mangled with the <tex_file> name.  This
