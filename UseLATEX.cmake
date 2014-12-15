@@ -22,8 +22,7 @@
 #                    [MULTIBIB_NEWCITES] <suffix_list>
 #                    [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
 #                    [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]
-#                    [EXCLUDE_FROM_ALL]
-#                    [MANGLE_TARGET_NAMES])
+#                    [EXCLUDE_FROM_ALL])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
@@ -55,11 +54,12 @@
 #                       target, it does not delete other input files, such as
 #                       converted images, to save time on the rebuild.
 #
-#	Unless the EXCLUDE_FROM_ALL option is given, one of these targets are
-#	added to the ALL target and built by default. Which target is
-#	determined by the LATEX_DEFAULT_BUILD CMake variable. See the
-#	documentation of that variable for more details.
+#       Unless the EXCLUDE_FROM_ALL option is given, one of these targets are
+#       added to the ALL target and built by default. Which target is
+#       determined by the LATEX_DEFAULT_BUILD CMake variable. See the
+#       documentation of that variable for more details.
 #
+#       CHANGE THIS DOCUMENTATION!!!!!!
 #       If the argument MANGLE_TARGET_NAMES is given, then each of the
 #       target names above will be mangled with the <tex_file> name.  This
 #       is to make the targets unique if add_latex_document is called for
@@ -90,8 +90,12 @@
 #       Mark variables for compiler and converter executables as advanced to
 #       match the more conventional CMake behavior.
 #
-#       Change how default builds are specified and add the ability to force
+#       Changed how default builds are specified and add the ability to force
 #       a particular build.
+#
+#       Made the base targets (pdf, dvi, etc.) global. add_latex_document
+#       always mangles its target names, and these base targets depend on
+#       the targets with mangled names.
 #
 # 1.10.5 Fix for Window's convert check (thanks to Martin Baute).
 #
@@ -732,6 +736,15 @@ function(latex_setup_variables)
     )
 endfunction(latex_setup_variables)
 
+function(latex_setup_targets)
+  add_custom_target(pdf)
+  add_custom_target(dvi)
+  add_custom_target(ps)
+  add_custom_target(safepdf)
+  add_custom_target(html)
+  add_custom_target(auxclean)
+endfunction(latex_setup_targets)
+
 function(latex_get_output_path var)
   set(latex_output_path)
   if(LATEX_OUTPUT_PATH)
@@ -971,7 +984,7 @@ endfunction(latex_copy_input_file)
 
 function(latex_usage command message)
   message(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]\n           [EXCLUDE_FROM_ALL]\n           [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]\n           [EXCLUDE_FROM_ALL])"
     )
 endfunction(latex_usage command message)
 
@@ -987,7 +1000,6 @@ function(parse_add_latex_arguments command latex_main_input)
     FORCE_DVI
     FORCE_HTML
     EXCLUDE_FROM_ALL
-    MANGLE_TARGET_NAMES
     )
   set(oneValueArgs
     )
@@ -1035,21 +1047,12 @@ function(add_latex_targets_internal)
     )
 
   # Set up target names.
-  if(LATEX_MANGLE_TARGET_NAMES)
-    set(dvi_target      ${LATEX_TARGET}_dvi)
-    set(pdf_target      ${LATEX_TARGET}_pdf)
-    set(ps_target       ${LATEX_TARGET}_ps)
-    set(safepdf_target  ${LATEX_TARGET}_safepdf)
-    set(html_target     ${LATEX_TARGET}_html)
-    set(auxclean_target ${LATEX_TARGET}_auxclean)
-  else()
-    set(dvi_target      dvi)
-    set(pdf_target      pdf)
-    set(ps_target       ps)
-    set(safepdf_target  safepdf)
-    set(html_target     html)
-    set(auxclean_target auxclean)
-  endif()
+  set(dvi_target      ${LATEX_TARGET}_dvi)
+  set(pdf_target      ${LATEX_TARGET}_pdf)
+  set(ps_target       ${LATEX_TARGET}_ps)
+  set(safepdf_target  ${LATEX_TARGET}_safepdf)
+  set(html_target     ${LATEX_TARGET}_html)
+  set(auxclean_target ${LATEX_TARGET}_auxclean)
 
   # Probably not all of these will be generated, but they could be.
   # Note that the aux file is added later.
@@ -1276,6 +1279,9 @@ function(add_latex_targets_internal)
         DEPENDS ${make_pdf_depends}
         )
       add_custom_target(${pdf_target} DEPENDS ${output_dir}/${LATEX_TARGET}.pdf)
+      if(NOT LATEX_EXCLUDE_FROM_ALL)
+        add_dependencies(pdf ${pdf_target})
+      endif()
     endif()
   endif()
 
@@ -1294,6 +1300,9 @@ function(add_latex_targets_internal)
       DEPENDS ${make_dvi_depends}
       )
     add_custom_target(${dvi_target} DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
+    if(NOT LATEX_EXCLUDE_FROM_ALL)
+      add_dependencies(dvi ${dvi_target})
+    endif()
 
     if(DVIPS_CONVERTER)
       add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.ps
@@ -1301,6 +1310,9 @@ function(add_latex_targets_internal)
         ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
         DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
       add_custom_target(${ps_target} DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+      if(NOT LATEX_EXCLUDE_FROM_ALL)
+        add_dependencies(ps ${ps_target})
+      endif()
       if(PS2PDF_CONVERTER)
         # Since both the pdf and safepdf targets have the same output, we
         # cannot properly do the dependencies for both.  When selecting safepdf,
@@ -1310,6 +1322,9 @@ function(add_latex_targets_internal)
           ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
           DEPENDS ${ps_target}
           )
+        if(NOT LATEX_EXCLUDE_FROM_ALL)
+          add_dependencies(safepdf ${safepdf_target})
+        endif()
       endif()
     endif()
   endif()
@@ -1332,6 +1347,9 @@ function(add_latex_targets_internal)
         DEPENDS ${output_dir}/${LATEX_TARGET}.tex
         )
       add_custom_target(${html_target} DEPENDS ${HTML_OUTPUT} ${dvi_target})
+      if(NOT LATEX_EXCLUDE_FROM_ALL)
+        add_dependencies(html ${html_target})
+      endif()
     endif()
   endif()
 
@@ -1349,7 +1367,7 @@ function(add_latex_targets_internal)
   else()
     message(SEND_ERROR "LATEX_DEFAULT_BUILD set to an invalid value. See the documentation for that variable.")
   endif()
-
+ 
   if(NOT LATEX_EXCLUDE_FROM_ALL)
     add_custom_target(_${LATEX_TARGET} ALL DEPENDS ${LATEX_TARGET})
   endif()
@@ -1426,4 +1444,5 @@ if(LATEX_BUILD_COMMAND)
 else()
   # Must be part of the actual configure (included from CMakeLists.txt).
   latex_setup_variables()
+  latex_setup_targets()
 endif()
