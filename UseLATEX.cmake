@@ -1380,6 +1380,7 @@ function(add_latex_targets_internal)
     COMMENT "Cleaning auxiliary LaTeX files."
     COMMAND ${CMAKE_COMMAND} -E remove ${auxiliary_clean_files}
     )
+  add_dependencies(auxclean ${auxclean_target})
 endfunction(add_latex_targets_internal)
 
 function(add_latex_targets latex_main_input)
