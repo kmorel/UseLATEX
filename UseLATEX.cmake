@@ -55,7 +55,7 @@
 #                       converted images, to save time on the rebuild.
 #
 #       Unless the EXCLUDE_FROM_ALL option is given, one of these targets
-#       are added to the ALL target and built by default. Which target is
+#       is added to the ALL target and built by default. Which target is
 #       determined by the LATEX_DEFAULT_BUILD CMake variable. See the
 #       documentation of that variable for more details.
 #
