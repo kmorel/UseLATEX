@@ -22,7 +22,8 @@
 #                    [MULTIBIB_NEWCITES] <suffix_list>
 #                    [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
 #                    [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]
-#                    [EXCLUDE_FROM_ALL])
+#                    [EXCLUDE_FROM_ALL]
+#                    [EXCLUDE_FROM_DEFAULTS])
 #       Adds targets that compile <tex_file>.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
@@ -59,7 +60,7 @@
 #       determined by the LATEX_DEFAULT_BUILD CMake variable. See the
 #       documentation of that variable for more details.
 #
-#       Also unless the EXCLUDE_FROM_ALL option is given, all these targets
+#       Unless the EXCLUDE_FROM_DEFAULTS option is given, all these targets
 #       are added as dependencies to targets named dvi, pdf, safepdf, ps,
 #       html, and auxclean, respectively.
 #
@@ -94,7 +95,7 @@
 #       a particular build.
 #
 #       Made the base targets (pdf, dvi, etc.) global. add_latex_document
-#       always mangles its target names, and these base targets depend on
+#       always mangles its target names and these base targets depend on
 #       the targets with mangled names.
 #
 # 1.10.5 Fix for Window's convert check (thanks to Martin Baute).
@@ -984,7 +985,7 @@ endfunction(latex_copy_input_file)
 
 function(latex_usage command message)
   message(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]\n           [EXCLUDE_FROM_ALL])"
+    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]\n           [EXCLUDE_FROM_ALL]\n           [EXCLUDE_FROM_DEFAULTS])"
     )
 endfunction(latex_usage command message)
 
@@ -1000,6 +1001,7 @@ function(parse_add_latex_arguments command latex_main_input)
     FORCE_DVI
     FORCE_HTML
     EXCLUDE_FROM_ALL
+    EXCLUDE_FROM_DEFAULTS
     )
   set(oneValueArgs
     )
@@ -1279,7 +1281,7 @@ function(add_latex_targets_internal)
         DEPENDS ${make_pdf_depends}
         )
       add_custom_target(${pdf_target} DEPENDS ${output_dir}/${LATEX_TARGET}.pdf)
-      if(NOT LATEX_EXCLUDE_FROM_ALL)
+      if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(pdf ${pdf_target})
       endif()
     endif()
@@ -1300,7 +1302,7 @@ function(add_latex_targets_internal)
       DEPENDS ${make_dvi_depends}
       )
     add_custom_target(${dvi_target} DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-    if(NOT LATEX_EXCLUDE_FROM_ALL)
+    if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
       add_dependencies(dvi ${dvi_target})
     endif()
 
@@ -1310,7 +1312,7 @@ function(add_latex_targets_internal)
         ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
         DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
       add_custom_target(${ps_target} DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
-      if(NOT LATEX_EXCLUDE_FROM_ALL)
+      if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(ps ${ps_target})
       endif()
       if(PS2PDF_CONVERTER)
@@ -1322,7 +1324,7 @@ function(add_latex_targets_internal)
           ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
           DEPENDS ${ps_target}
           )
-        if(NOT LATEX_EXCLUDE_FROM_ALL)
+        if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
           add_dependencies(safepdf ${safepdf_target})
         endif()
       endif()
@@ -1347,7 +1349,7 @@ function(add_latex_targets_internal)
         DEPENDS ${output_dir}/${LATEX_TARGET}.tex
         )
       add_custom_target(${html_target} DEPENDS ${HTML_OUTPUT} ${dvi_target})
-      if(NOT LATEX_EXCLUDE_FROM_ALL)
+      if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(html ${html_target})
       endif()
     endif()

@@ -634,18 +634,23 @@ add_latex_document(MyDoc2.tex)
   \textmaketarget{pdf}, etc. will execute the respective targets for the
   two documents.
 
-  The \textcmake{EXCLUDE\_FROM\_ALL} option suppresses these links to the
+  The \textcmake{EXCLUDE\_FROM\_DEFAULTS} option suppresses these links to the
   document's targets.
 
   \begin{CodeListing}
 add_latex_document(MyDoc1.tex)
 add_latex_document(MyDoc2.tex)
-add_latex_document(MyDoc3.tex EXCLUDE_FROM_ALL)
+add_latex_document(MyDoc3.tex EXCLUDE_FROM_DEFAULTS)
   \end{CodeListing}
 
   In this augmented example, MyDoc1 and MyDoc2 are built when targets such
   as \textmaketarget{dvi} and \textmaketarget{pdf} are called, but MyDoc3
-  is not.
+  is not. Note, however, that in this example MyDoc3 is still built as part
+  of the \textmaketarget{all} target that CMake sets as the default build
+  target. Use \textcmake{EXCLUDE\_FROM\_ALL} to remove a document from the
+  default \textmaketarget{all} build. \textcmake{EXCLUDE\_FROM\_ALL} and
+  \textcmake{EXCLUDE\_FROM\_DEFAULTS} can be used together or
+  independently.
 
   \subsection{Identifying Dependent Files}
   \label{sec:IdentifyingDependentFiles}
@@ -1037,6 +1042,49 @@ something like my-image.pdf.
   filenames correctly, it is still a bad idea in case you need to change
   distributions or build on other computers.  Your best course of action is
   to simply heed the warning and rename your files.
+
+  \subsection{Why is the \textcmake{MANGLE\_TARGET\_NAMES} option deprecated?}
+  \label{sec:Why_is_the_MANGLE_TARGET_NAMES_option_deprecated}
+
+  The original concept for \UseLATEX was part of a build system for a
+  single document. As such, \ald created generically named targets (like
+  \textmaketarget{dvi} and \textmaketarget{pdf}). This became problematic
+  when \UseLATEX was used in larger projects that built multiple targets.
+  The multiple documents would each try to create their own
+  \textmaketarget{dvi}, \textmaketarget{pdf}, etc. targets, and this would
+  create CMake errors when they conflicted with each other.
+
+  To solve this problem, in 2006 the \textcmake{MANGLE\_TARGET\_NAMES} was
+  added to \ald. When this option was given, \ald would create ``mangled''
+  targets that are unique to the name of the document so that they would
+  not conflict with each other.
+
+  This option solved the problem for projects building multiple documents,
+  but a couple of undesirable elements were later discovered. The first was
+  that \latex documents built with the \textcmake{MANGLE\_TARGET\_NAMES}
+  option were never built by default. To build the document, the user had
+  to specifically request the target, which had an unwieldy name, to be
+  built or to explicitly set up dependencies to those targets. The second
+  and more serious issue was that if a project incorporated one or more
+  sub-projects (not uncommon) and more than one of these projects used
+  \UseLATEX, you were likely to get conflicting targets again.
+
+  Consequently, in 2015 a change was made to \ald to mangle all targets.
+  The \UseLATEX package establishes a single set of default target names
+  (\textmaketarget{dvi}, \textmaketarget{pdf}, etc.), and \ald sets up
+  dependencies from these default targets to the mangled target names.
+  Thus, when \UseLATEX is used for a single document, the same simple
+  targets work fine. When multiple documents are added, the default targets
+  are automatically set up for all documents without conflicts. See
+  Section~\ref{sec:BuldingMultipleLatexDocuments} for more details on
+  building multiple \latex documents in a project.
+
+  So, \textcmake{MANGLE\_TARGET\_NAMES} is deprecated because it is
+  redundant. All targets are mangled. The only difference is that \ald
+  establishes dependencies to the default target names. If these dependency
+  targets are not desired, use the \textcmake{EXCLUDE\_FROM\_DEFAULTS}
+  option. (Once again, see Section~\ref{sec:BuldingMultipleLatexDocuments}
+  for more details.)
 
   %-----------------------------------------------------------------------------
 
