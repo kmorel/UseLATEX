@@ -1012,7 +1012,7 @@ endfunction(latex_copy_input_file)
 
 function(latex_usage command message)
   message(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]\n           [EXCLUDE_FROM_ALL]\n           [EXCLUDE_FROM_DEFAULTS])"
+    "${message}\n  Usage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]\n           [EXCLUDE_FROM_ALL]\n           [EXCLUDE_FROM_DEFAULTS])"
     )
 endfunction(latex_usage command message)
 
@@ -1029,6 +1029,13 @@ function(parse_add_latex_arguments command latex_main_input)
     FORCE_HTML
     EXCLUDE_FROM_ALL
     EXCLUDE_FROM_DEFAULTS
+    # Deprecated options
+    USE_GLOSSARIES
+    DEFAULT_PDF
+    DEFAULT_SAFEPDF
+    DEFAULT_PS
+    NO_DEFAULT
+    MANGLE_TARGET_NAMES
     )
   set(oneValueArgs
     )
@@ -1044,8 +1051,27 @@ function(parse_add_latex_arguments command latex_main_input)
   cmake_parse_arguments(
     LATEX "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
+  # Handle invalid and deprecated arguments
   if(LATEX_UNPARSED_ARGUMENTS)
-    latex_usage(${command} "Invalid or depricated arguments: ${LATEX_UNPARSED_ARGUMENTS}")
+    latex_usage(${command} "Invalid or deprecated arguments: ${LATEX_UNPARSED_ARGUMENTS}")
+  endif()
+  if(LATEX_USE_GLOSSARIES)
+    latex_usage(${command} "USE_GLOSSARIES option removed in version 1.6.1. Use USE_GLOSSARY instead.")
+  endif()
+  if(LATEX_DEFAULT_PDF)
+    latex_usage(${command} "DEFAULT_PDF option removed in version 2.0. Use FORCE_PDF option or LATEX_DEFAULT_BUILD CMake variable instead.")
+  endif()
+  if(LATEX_DEFAULT_SAFEPDF)
+    latex_usage(${command} "DEFAULT_SAFEPDF option removed in version 2.0. Use LATEX_DEFAULT_BUILD CMake variable instead.")
+  endif()
+  if(LATEX_DEFAULT_DVI)
+    latex_usage(${command} "DEFAULT_DVI option removed in version 2.0. Use FORCE_DVI option or LATEX_DEFAULT_BUILD CMake variable instead.")
+  endif()
+  if(LATEX_NO_DEFAULT)
+    latex_usage(${command} "NO_DEFAULT option removed in version 2.0. Use EXCLUDE_FROM_ALL instead.")
+  endif()
+  if(LATEX_MANGLE_TARGET_NAMES)
+    latex_usage(${command} "MANGLE_TARGET_NAMES option removed in version 2.0. All LaTeX targets use mangled names now.")
   endif()
 
   # Capture the first argument, which is the main LaTeX input.
