@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.0.0
+# Version: 2.0.1
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -99,6 +99,9 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.0.1 Fix an error where the pdf target and others were defined multiple
+#       times if UseLATEX.cmake was included multiple times.
 #
 # 2.0.0 First major revision of UseLATEX.cmake updates to more recent features
 #       of CMake and some non-backward compatible changes.
@@ -765,12 +768,24 @@ function(latex_setup_variables)
 endfunction(latex_setup_variables)
 
 function(latex_setup_targets)
-  add_custom_target(pdf)
-  add_custom_target(dvi)
-  add_custom_target(ps)
-  add_custom_target(safepdf)
-  add_custom_target(html)
-  add_custom_target(auxclean)
+  if(NOT TARGET pdf)
+    add_custom_target(pdf)
+  endif()
+  if(NOT TARGET dvi)
+    add_custom_target(dvi)
+  endif()
+  if(NOT TARGET ps)
+    add_custom_target(ps)
+  endif()
+  if(NOT TARGET safepdf)
+    add_custom_target(safepdf)
+  endif()
+  if(NOT TARGET html)
+    add_custom_target(html)
+  endif()
+  if(NOT TARGET auxclean)
+    add_custom_target(auxclean)
+  endif()
 endfunction(latex_setup_targets)
 
 function(latex_get_output_path var)

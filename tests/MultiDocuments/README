@@ -1,0 +1,9 @@
+This tests appropriate behavior when a project (or multi-project) tries to
+create multiple documents with multiple add_latex_document calls. It also
+creates them in separate subdirectories, with each subdirectory
+independently loading UseLATEX.cmake. This is typical in a large project
+that might bring in several subprojects.
+
+When running this project, two documents should be built. You should not
+get errors or warnings about a target being defined multiple times. You
+should be able to build using the pdf, dvi, ps, and safepdf targets.
