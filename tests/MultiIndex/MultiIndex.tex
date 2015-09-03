@@ -1,0 +1,25 @@
+\documentclass{article}
+
+\usepackage{blindtext}
+
+\usepackage{multind}
+\makeindex{terms}
+\makeindex{people}
+
+\begin{document}
+
+\index{terms}{foo}
+\index{terms}{bar}
+\index{terms}{baz}
+
+\index{people}{Homer}
+\index{people}{Marge}
+\index{people}{Bart}
+\index{people}{Lisa}
+\index{people}{Maggie}
+
+\blindtext
+
+\printindex{terms}{Term Index}
+\printindex{people}{People Index}
+\end{document}

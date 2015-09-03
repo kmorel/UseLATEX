@@ -1,0 +1,11 @@
+This test exercises problems with filenames containing multiple periods.
+The tex, bib, and image files all have more than one dot.  The tex and bib
+files should be handled properly.  In general, the image file is not.
+CMake should handle this image correctly in that it is correctly
+copied/converted to the build directory.  However, many distributions of
+LaTeX do not handle these images correctly.
+
+The tex file links in the image using its full name as an eps file.  That
+seems to work for my distribution, which has been picky about all other
+configurations, when making a dvi file.  If the LaTeX build fails, that may
+not be an actual problem with UseLATEX.cmake.

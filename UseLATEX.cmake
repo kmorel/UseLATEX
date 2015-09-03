@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.0.1
+# Version: 2.1.0
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -47,7 +47,9 @@
 #                    [CONFIGURE] <tex_files>
 #                    [DEPENDS] <tex_files>
 #                    [MULTIBIB_NEWCITES] <suffix_list>
-#                    [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
+#                    [USE_INDEX]
+#                    [INDEX_NAMES <index_names>]
+#                    [USE_GLOSSARY] [USE_NOMENCL]
 #                    [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]
 #                    [EXCLUDE_FROM_ALL]
 #                    [EXCLUDE_FROM_DEFAULTS])
@@ -92,7 +94,11 @@
 #       html, and auxclean, respectively.
 #
 #       If the argument USE_INDEX is given, then commands to build an index
-#       are made.  If the argument USE_GLOSSARY is given, then commands to
+#       are made. If the argument INDEX_NAMES is given, an index file is
+#       generated for each name in this list. See the LaTeX package multind
+#       for more information about how to generate multiple indices.
+#
+#       If the argument USE_GLOSSARY is given, then commands to
 #       build a glossary are made.  If the argument MULTIBIB_NEWCITES is
 #       given, then additional bibtex calls are added to the build to
 #       support the extra auxiliary files created with the \newcite command
@@ -100,8 +106,11 @@
 #
 # History:
 #
-# 2.0.1 Fix an error where the pdf target and others were defined multiple
+# 2.1.0 Fix an error where the pdf target and others were defined multiple
 #       times if UseLATEX.cmake was included multiple times.
+#
+#       Added INDEX_NAMES option to support multiple indexes in a single
+#       document from the multind package (thanks to Dan Lipsa).
 #
 # 2.0.0 First major revision of UseLATEX.cmake updates to more recent features
 #       of CMake and some non-backward compatible changes.
@@ -1062,6 +1071,7 @@ function(parse_add_latex_arguments command latex_main_input)
     IMAGES
     CONFIGURE
     DEPENDS
+    INDEX_NAMES
     )
   cmake_parse_arguments(
     LATEX "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -1283,16 +1293,31 @@ function(add_latex_targets_internal)
   endif()
 
   if(LATEX_USE_INDEX)
-    set(make_dvi_command ${make_dvi_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${latex_build_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
-    set(make_pdf_command ${make_pdf_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${pdflatex_build_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${LATEX_TARGET}.idx)
+    if(LATEX_INDEX_NAMES)
+      set(INDEX_NAMES ${LATEX_INDEX_NAMES})
+    else()
+      set(INDEX_NAMES ${LATEX_TARGET})
+    endif()
+    foreach(idx_name ${INDEX_NAMES})
+      set(make_dvi_command ${make_dvi_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${latex_build_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${idx_name}.idx)
+      set(make_pdf_command ${make_pdf_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${pdflatex_build_command}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${idx_name}.idx)
+      set(auxiliary_clean_files ${auxiliary_clean_files}
+	${output_dir}/${idx_name}.idx
+	${output_dir}/${idx_name}.ilg
+	${output_dir}/${idx_name}.ind)
+    endforeach()
+  else()
+    if(LATEX_INDEX_NAMES)
+      message(WARNING "INDEX_NAMES has no effect without USE_INDEX option.")
+    endif()
   endif()
 
   set(make_dvi_command ${make_dvi_command}

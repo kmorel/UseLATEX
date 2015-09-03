@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{2.0.0}
+\newcommand{\UseLATEXVersion}{2.1.0}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -403,7 +403,7 @@ add_latex_document(MyDoc.tex
 
   You can make an index in a \latex document by using the
   \textlatexpackage{makeidx} package. However, this package requires you to
-  run the \textprog{makeindex} command. Simply add the
+  run the \textprog{makeindex} program. Simply add the
   \textcmake{USE\_INDEX} option anywhere in the \ald arguments, and
   \textprog{makeindex} will automatically be added to the build.
 
@@ -412,6 +412,39 @@ add_latex_document(MyDoc.tex
   BIBFILES MyDoc.bib
   IMAGE_DIRS images
   USE_INDEX
+  )
+  \end{CodeListing}
+
+  \subsection{Making Multiple Indexes}
+  \label{sec:MakingMultipleIndexes}
+
+  The \textlatexpackage{multind} package allows you to create multiple
+  indexes in a single \latex document. For example, when documenting a
+  software library you might want to have a general index of terms and a
+  second index of function names.
+
+  The way the \textlatexpackage{multind} package works is that it creates a
+  separate index file for each of the indexes being created, and the
+  \textprog{makeindex} program must be run independently on each of them.
+  To get \UseLATEX to run \textprog{makeindex} on all of the required index
+  file, list all of the indexes created with the \textcmake{INDEX\_NAMES}
+  option of \ald. For example, in a \latex document that declares two
+  indexes like the following
+
+  \begin{CodeListing}
+\usepackage{multind}
+\makeindex{general}
+\makeindex{functions}
+  \end{CodeListing}
+
+  you would name the indexes in \ald like the following.
+
+  \begin{CodeListing}
+add_latex_document(MyDoc.tex
+  BIBFILES MyDoc.bib
+  IMAGE_DIRS images
+  USE_INDEX
+  INDEX_NAMES general functions
   )
   \end{CodeListing}
 
@@ -1111,6 +1144,7 @@ something like my-image.pdf.
   \item[Antonio LaTorre] Support for the \textlatexpackage{multibib}
     package.
   \item[Edwin van Leeuwen] Fix for a bug when copying \bibtex files.
+  \item[Dan Lipsa] Support for the \textlatexpackage{multind} package.
   \item[Lukasz Lis] Workaround for problem with ImageMagick dropping the
     BoundingBox of eps files by using the \textprog{ps2pdf} program
     instead.
