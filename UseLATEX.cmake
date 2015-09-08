@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.1.0
+# Version: 2.1.1
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -105,6 +105,8 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.1.1 Support for finding bmp, ppm, and other image files.
 #
 # 2.1.0 Fix an error where the pdf target and others were defined multiple
 #       times if UseLATEX.cmake was included multiple times.
@@ -741,15 +743,17 @@ function(latex_setup_variables)
     )
 
   set(LATEX_PDF_VECTOR_IMAGE_EXTENSIONS .pdf CACHE INTERNAL "")
-  set(LATEX_PDF_RASTER_IMAGE_EXTENSIONS .png .jpeg .jpg CACHE INTERNAL "")
+  set(LATEX_PDF_RASTER_IMAGE_EXTENSIONS .jpeg .jpg .png CACHE INTERNAL "")
   set(LATEX_PDF_IMAGE_EXTENSIONS
     ${LATEX_PDF_VECTOR_IMAGE_EXTENSIONS}
     ${LATEX_PDF_RASTER_IMAGE_EXTENSIONS}
     CACHE INTERNAL ""
     )
 
-  set(LATEX_OTHER_VECTOR_IMAGE_EXTENSIONS .svg CACHE INTERNAL "")
-  set(LATEX_OTHER_RASTER_IMAGE_EXTENSIONS .tif .tiff .gif CACHE INTERNAL "")
+  set(LATEX_OTHER_VECTOR_IMAGE_EXTENSIONS .ai .dot .svg CACHE INTERNAL "")
+  set(LATEX_OTHER_RASTER_IMAGE_EXTENSIONS
+    .bmp .bmp2 .bmp3 .dcm .dcx .ico .gif .pict .ppm .tif .tiff
+    CACHE INTERNAL "")
   set(LATEX_OTHER_IMAGE_EXTENSIONS
     ${LATEX_OTHER_VECTOR_IMAGE_EXTENSIONS}
     ${LATEX_OTHER_RASTER_IMAGE_EXTENSIONS}

@@ -85,9 +85,9 @@
     glossaries.
   \item Optionally runs configure on your \latex files to replace
     \textcmake{@\textvar{VARIABLE}@} with the equivalent CMake variable.
-  \item Automatically finds png, jpeg, eps, pdf, svg, tiff, and gif files
-    and converts them to formats \textprog{latex} and \textprog{pdflatex}
-    understand.
+  \item Automatically finds png, jpeg, eps, pdf, svg, tiff, gif, bmp, and
+    other image files and converts them to formats \textprog{latex} and
+    \textprog{pdflatex} understand.
   \end{itemize}
 
   %-----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ add_latex_document(MyDoc.tex
 
   If you want to break up your image files in several different
   directories, you can do that, too. Simply provide multiple directories
-  after the \textcmake{IMAGE\_DIRS} command.
+  after the \textcmake{IMAGE\_DIRS} option.
 
   \begin{CodeListing}
 add_latex_document(MyDoc.tex
@@ -225,20 +225,13 @@ add_latex_document(MyDoc.tex
   \end{CodeListing}
   %$
 
-  Both the \textcmake{IMAGE\_DIRS} and \textcmake{IMAGES} can be used
-  together. The combined set of image files will be processed. If you wish
-  to provide a separate eps file and pdf or png file, that is OK,
-  too. \UseLATEX will handle that by copying over the correct file instead
-  of converting.
-
-  Once you establish the images directory, CMake will automatically find
-  all files with known image extensions (currently eps, pdf, png, jpeg, and
-  jpg) in it and add makefile targets to use ImageMagick's
-  \textprog{convert} to convert the file times to those appropriate for the
-  build. (One exception is that \textprog{ps2pdf} will be used when
-  converting eps to pdf to get around a problem where ImageMagick drops the
-  bounding box information.)  If you do not have ImageMagick, you can get
-  it for free from
+  For every image file specified and found with the \textcmake{IMAGE\_DIRS}
+  and \textcmake{IMAGES} options, \UseLATEX adds makefile targets to use
+  ImageMagick's \textprog{convert} to convert the file times to those
+  appropriate for the build. (One exception is that \textprog{ps2pdf} will
+  be used when converting eps to pdf to get around a problem where
+  ImageMagick drops the bounding box information.) If you do not have
+  ImageMagick, you can get it for free from
   \href{http://www.imagemagick.org}{http://www.imagemagick.org}. CMake will
   also give you a \textcmakevar{LATEX\_SMALL\_IMAGES} option that, when on,
   will downsample raster images. This can help speed up building and
@@ -253,6 +246,21 @@ add_latex_document(MyDoc.tex
   any rate, you do not need to worry about setting the appropriate image
   conversion program.  \UseLATEX will automatically select the best one and
   issue errors or warnings if there is a problem.
+
+  The \textcmake{IMAGE\_DIRS} option tries to identify image files by their
+  extensions. The current list of image extensions \UseLATEX checks for is:
+  .bmp, .bmp2, .bmp3, .dcm, .dcx, .ico, .gif, .jpeg, .jpg, .eps, .pdf,
+  .pict, .png, .ppm, .tif, and .tiff. If you are trying to use an image
+  format that is supported by ImageMagick but is not recognized by
+  \UseLATEX, you can specify the files directly with the \textcmake{IMAGES}
+  option instead. \UseLATEX will assume that any file specified with the
+  \textcmake{IMAGES} option is an image file regardless of its extension.
+
+  Both the \textcmake{IMAGE\_DIRS} and \textcmake{IMAGES} can be used
+  together. The combined set of image files will be processed. If you wish
+  to provide a separate eps file and pdf or png file, that is OK,
+  too. \UseLATEX will handle that by copying over the correct file instead
+  of converting.
 
   Depending on what program is launched to build your \latex file (either
   \textprog{latex} or \textprog{pdflatex}, and \UseLATEX supports both), a
@@ -1075,6 +1083,39 @@ something like my-image.pdf.
   filenames correctly, it is still a bad idea in case you need to change
   distributions or build on other computers.  Your best course of action is
   to simply heed the warning and rename your files.
+
+  \subsection{Why is my image file not being automatically converted?}
+  \label{sec:Why_is_my_image_file_not_being_automatically_converted}
+
+  \UseLATEX has the ability to find image files and automatically convert
+  them to a format \latex understands. Usually this conversion happens with
+  the ImageMagick \textprog{convert} program.
+
+  Users occasionally report that image formats that should be supported
+  because ImageMagick can convert them are ignored by \UseLATEX. This can
+  happen even when the \textcmake{IMAGE\_DIRS} option points to the
+  directory containing the image files.
+
+  The problem here is that \UseLATEX only considers files in
+  \textcmake{IMAGE\_DIRS} directories that it identifies as a bona fide
+  image. This prevents \UseLATEX from picking up another type of file, such
+  as a README text file, and erroneously trying to do image conversion on
+  it.
+
+  \UseLATEX checks for image files by looking for a known set of image
+  extensions. This extension list is maintained separately from
+  ImageMagick's extension list and is generally a small subset of all the
+  potential formats ImageMagick supports. Consequently, it is possible for
+  \UseLATEX to ignore an image file that could be converted.
+
+  You can work around this problem by specifying images independently with
+  the \textcmake{IMAGES} option. \UseLATEX will assume any image specified
+  under the \textcmake{IMAGES} option is in fact an image that can be
+  converted with ImageMagick regardless of the extension. See
+  Section~\ref{sec:IncoporatingImages} for more details.
+
+  If there is a file extension that you think should be added to the list
+  of image extensions to check, send a note to the \UseLATEX maintainers.
 
   \subsection{Why is the \textcmake{MANGLE\_TARGET\_NAMES} option deprecated?}
   \label{sec:Why_is_the_MANGLE_TARGET_NAMES_option_deprecated}
