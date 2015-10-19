@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{2.1.1}
+\newcommand{\UseLATEXVersion}{2.2.0}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -692,6 +692,24 @@ add_latex_document(MyDoc3.tex EXCLUDE_FROM_DEFAULTS)
   default \textmaketarget{all} build. \textcmake{EXCLUDE\_FROM\_ALL} and
   \textcmake{EXCLUDE\_FROM\_DEFAULTS} can be used together or
   independently.
+
+  An issue that can come up in larger builds with multiple \latex documents
+  is a name collision. If two subdirectories each have a \latex document
+  with the same \textfile{.tex} file in it, then the respective calls to
+  \ald will create the same target names, which CMake does not allow. One
+  way around this problem is to rename the files to be unique (so that \ald
+  will create unique target names). But a more convenient way is to use the
+  \textcmake{TARGET\_NAME} option to change the target names. For example,
+  consider the following use of \textcmake{TARGET\_NAME}.
+
+  \begin{CodeListing}
+add_latex_document(doc.tex TARGET_NAME MyDoc1)
+  \end{CodeListing}
+
+  This will change the behavior of \ald to create targets named
+  \textmaketarget{MyDoc1\_dvi}, \textmaketarget{MyDoc1\_pdf},
+  \textmaketarget{MyDoc1\_ps}, etc. instead of \textmaketarget{doc\_dvi},
+  \textmaketarget{doc\_pdf}, \textmaketarget{doc\_ps}, etc.
 
   \subsection{Identifying Dependent Files}
   \label{sec:IdentifyingDependentFiles}
