@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{2.2.0}
+\newcommand{\UseLATEXVersion}{2.2.1}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -288,9 +288,9 @@ add_latex_document(MyDoc.tex
 
   \UseLATEX defines the CMake variable \textcmakevar{LATEX\_DEFAULT\_BUILD}
   that controls which build is performed by default. Valid values for this
-  variable are \textcmake{Pdf}, \textcmake{Dvi}, \textcmake{Ps},
-  \textcmake{SafePdf}, and \textcmake{Html}. This variable is usually
-  initialized to \textcmake{Pdf}, but you can override this behavior by
+  variable are \textcmake{pdf}, \textcmake{dvi}, \textcmake{ps},
+  \textcmake{safepdf}, and \textcmake{html}. This variable is usually
+  initialized to \textcmake{pdf}, but you can override this behavior by
   setting the \textcmakevar{LATEX\_DEFAULT\_BUILD} environment variable
   before the first configuration. Thus, if you have a preference for a
   particular default build, you can set your system environment to use it

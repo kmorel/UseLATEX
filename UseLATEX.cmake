@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.2.0
+# Version: 2.2.1
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -109,6 +109,11 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.2.1 Add STRINGS property to LATEX_DEFAULT_BUILD to make it easier to
+#       select the default build in the CMake GUI.
+#
+# 2.2.0 Add TARGET_NAME option.
 #
 # 2.1.1 Support for finding bmp, ppm, and other image files.
 #
@@ -713,11 +718,14 @@ function(latex_setup_variables)
   if(DEFINED ENV{LATEX_DEFAULT_BUILD})
     set(default_build $ENV{LATEX_DEFAULT_BUILD})
   else()
-    set(default_build Pdf)
+    set(default_build pdf)
   endif()
 
   set(LATEX_DEFAULT_BUILD "${default_build}" CACHE STRING
-    "Choose the default type of LaTeX build. Valid options are Pdf, Dvi, Ps, SafePdf, Html"
+    "Choose the default type of LaTeX build. Valid options are pdf, dvi, ps, safepdf, html"
+    )
+  set_property(CACHE LATEX_DEFAULT_BUILD
+    PROPERTY STRINGS pdf dvi ps safepdf html
     )
 
   option(LATEX_USE_SYNCTEX
