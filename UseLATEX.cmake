@@ -47,7 +47,6 @@
 #                    [CONFIGURE] <tex_files>
 #                    [DEPENDS] <tex_files>
 #                    [MULTIBIB_NEWCITES] <suffix_list>
-#                    [USE_BIBLATEX]
 #                    [USE_INDEX]
 #                    [INDEX_NAMES <index_names>]
 #                    [USE_GLOSSARY] [USE_NOMENCL]
@@ -624,19 +623,14 @@ function(latex_setup_variables)
 
   find_program(PDFTOPS_CONVERTER
     NAMES pdftops
-    PATHS /usr/bin
     DOC "The pdf to ps converter program from the Poppler package."
     )
-
-  # For some reason, pdftops can't be found with find_program()
-  if (NOT PDFTOPS_CONVERTER)
-    set(PDFTOPS_CONVERTER /usr/bin/pdftops)
-  endif()
 
   mark_as_advanced(
     LATEX_COMPILER
     PDFLATEX_COMPILER
-    BIB_COMPILER
+    BIBTEX_COMPILER
+    BIBLATEX_COMPILER
     MAKEINDEX_COMPILER
     XINDY_COMPILER
     DVIPS_CONVERTER
@@ -647,11 +641,8 @@ function(latex_setup_variables)
 
   latex_needit(LATEX_COMPILER latex)
   latex_wantit(PDFLATEX_COMPILER pdflatex)
-  if (LATEX_USE_BIBLATEX)
-    latex_needit(BIB_COMPILER biber)
-  else ()
-    latex_needit(BIB_COMPILER bibtex)
-  endif ()
+  latex_needit(BIBTEX_COMPILER bibtex)
+  latex_needit(BIBLATEX_COMPILER biber)
   latex_needit(MAKEINDEX_COMPILER makeindex)
   latex_wantit(DVIPS_CONVERTER dvips)
   latex_wantit(PS2PDF_CONVERTER ps2pdf)
@@ -680,13 +671,10 @@ function(latex_setup_variables)
     CACHE STRING "Flags passed to pdflatex.")
   set(LATEX_SYNCTEX_FLAGS "-synctex=1"
     CACHE STRING "latex/pdflatex flags used to create synctex file.")
-if (USE_LATEX_BIBLATEX)
-    set(BIB_COMPILER_FLAGS ""
-      CACHE STRING "Flags passed to biber.")
-  else ()
-    set(BIB_COMPILER_FLAGS ""
-      CACHE STRING "Flags passed to bibtex.")
-  endif ()
+  set(BIBTEX_COMPILER_FLAGS ""
+    CACHE STRING "Flags passed to bibtex.")
+  set(BIBLATEX_COMPILER_FLAGS ""
+    CACHE STRING "Flags passed to biber.")
   set(MAKEINDEX_COMPILER_FLAGS ""
     CACHE STRING "Flags passed to makeindex.")
   set(MAKEGLOSSARIES_COMPILER_FLAGS ""
@@ -705,7 +693,8 @@ if (USE_LATEX_BIBLATEX)
     LATEX_COMPILER_FLAGS
     PDFLATEX_COMPILER_FLAGS
     LATEX_SYNCTEX_FLAGS
-    BIB_COMPILER_FLAGS
+    BIBTEX_COMPILER_FLAGS
+    BIBLATEX_COMPILER_FLAGS
     MAKEINDEX_COMPILER_FLAGS
     MAKEGLOSSARIES_COMPILER_FLAGS
     MAKENOMENCLATURE_COMPILER_FLAGS
@@ -717,7 +706,8 @@ if (USE_LATEX_BIBLATEX)
   separate_arguments(LATEX_COMPILER_FLAGS)
   separate_arguments(PDFLATEX_COMPILER_FLAGS)
   separate_arguments(LATEX_SYNCTEX_FLAGS)
-  separate_arguments(BIB_COMPILER_FLAGS)
+  separate_arguments(BIBTEX_COMPILER_FLAGS)
+  separate_arguments(BIBLATEX_COMPILER_FLAGS)
   separate_arguments(MAKEINDEX_COMPILER_FLAGS)
   separate_arguments(MAKEGLOSSARIES_COMPILER_FLAGS)
   separate_arguments(MAKENOMENCLATURE_COMPILER_FLAGS)
@@ -1299,25 +1289,32 @@ function(add_latex_targets_internal)
   endif()
 
   if(LATEX_BIBFILES)
+    if(LATEX_USE_BIBLATEX)
+      set(bib_compiler ${BIBLATEX_COMPILER})
+      set(bib_compiler_flags ${BIBLATEX_COMPILER_FLAGS})
+    else()
+      set(bib_compiler ${BIBTEX_COMPILER})
+      set(bib_compiler_flags ${BIBTEX_COMPILER_FLAGS})
+    endif() 
     if(LATEX_MULTIBIB_NEWCITES)
       foreach (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
         latex_get_filename_component(multibib_target ${multibib_auxfile} NAME_WE)
         set(make_dvi_command ${make_dvi_command}
           COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-          ${BIB_COMPILER} ${BIB_COMPILER_FLAGS} ${multibib_target})
+          ${bib_compiler} ${bib_compiler_flags} ${multibib_target})
         set(make_pdf_command ${make_pdf_command}
           COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-          ${BIB_COMPILER} ${BIB_COMPILER_FLAGS} ${multibib_target})
+          ${bib_compiler} ${bib_compiler_flags} ${multibib_target})
         set(auxiliary_clean_files ${auxiliary_clean_files}
           ${output_dir}/${multibib_target}.aux)
       endforeach (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
     else()
       set(make_dvi_command ${make_dvi_command}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${BIB_COMPILER} ${BIB_COMPILER_FLAGS} ${LATEX_TARGET})
+        ${bib_compiler} ${bib_compiler_flags} ${LATEX_TARGET})
       set(make_pdf_command ${make_pdf_command}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${BIB_COMPILER} ${BIB_COMPILER_FLAGS} ${LATEX_TARGET})
+        ${bib_compiler} ${bib_compiler_flags} ${LATEX_TARGET})
     endif()
 
     foreach (bibfile ${LATEX_BIBFILES})
@@ -1358,19 +1355,6 @@ function(add_latex_targets_internal)
     endif()
   endif()
 
-  # Need to run one more time to eliminate biblatex' warning about page breaks
-  # that have changed.
-  if (LATEX_USE_BIBLATEX)
-    set(make_dvi_command ${make_dvi_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${latex_build_command}
-      ${BIB_COMPILER} ${BIB_COMPILER_FLAGS} ${LATEX_TARGET})
-    set(make_pdf_command ${make_pdf_command}
-      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${pdflatex_build_command}
-      ${BIB_COMPILER} ${BIB_COMPILER_FLAGS} ${LATEX_TARGET})
-  endif ()
-  
   set(make_dvi_command ${make_dvi_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
     ${latex_build_command}
@@ -1381,6 +1365,17 @@ function(add_latex_targets_internal)
     ${pdflatex_build_command}
     COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
     ${pdflatex_build_command})
+
+  # Need to run one more time to remove biblatex' warning
+  # about page breaks that have changed.
+  if(LATEX_USE_BIBLATEX)
+    set(make_dvi_command ${make_dvi_command}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${latex_build_command})
+    set(make_pdf_command ${make_pdf_command}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+      ${pdflatex_build_command})
+  endif()
 
   if(LATEX_USE_SYNCTEX)
     if(NOT GZIP)
