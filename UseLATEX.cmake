@@ -47,6 +47,7 @@
 #                    [CONFIGURE] <tex_files>
 #                    [DEPENDS] <tex_files>
 #                    [MULTIBIB_NEWCITES] <suffix_list>
+#                    [USE_BIBLATEX]
 #                    [USE_INDEX]
 #                    [INDEX_NAMES <index_names>]
 #                    [USE_GLOSSARY] [USE_NOMENCL]
