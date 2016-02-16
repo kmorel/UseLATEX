@@ -8,11 +8,6 @@ include(UseLATEX.cmake)
 # input to the document, but in this special case of documenting
 # UseLATEX.cmake the contents of this file is actually included
 # in the document.
-# USE_BIBLATEX enables the use of biblatex/biber as an alternative
-# to bibtex. Bibtex remains the default if USE_BIBLATEX is not specified.
-# Biber is the only backend supported for use with biblatex, although it
-# is possible to manually change this in UseLATEX.cmake.
 add_latex_document(UseLATEX.tex
   INPUTS CMakeLists.txt
-  USE_BIBLATEX
   )

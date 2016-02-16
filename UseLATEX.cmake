@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.2.1
+# Version: 2.3.0
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -98,6 +98,10 @@
 #       are added as dependencies to targets named dvi, pdf, safepdf, ps,
 #       html, and auxclean, respectively.
 #
+#       USE_BIBLATEX enables the use of biblatex/biber as an alternative to
+#       bibtex. Bibtex remains the default if USE_BIBLATEX is not
+#       specified.
+#
 #       If the argument USE_INDEX is given, then commands to build an index
 #       are made. If the argument INDEX_NAMES is given, an index file is
 #       generated for each name in this list. See the LaTeX package multind
@@ -110,6 +114,10 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.3.0 Add USE_BIBLATEX option to support the biblatex package, which
+#       requires using the program biber as a replacement for bibtex
+#       (thanks to David Tracey).
 #
 # 2.2.1 Add STRINGS property to LATEX_DEFAULT_BUILD to make it easier to
 #       select the default build in the CMake GUI.
@@ -631,7 +639,7 @@ function(latex_setup_variables)
     LATEX_COMPILER
     PDFLATEX_COMPILER
     BIBTEX_COMPILER
-    BIBLATEX_COMPILER
+    BIBER_COMPILER
     MAKEINDEX_COMPILER
     XINDY_COMPILER
     DVIPS_CONVERTER
@@ -643,7 +651,7 @@ function(latex_setup_variables)
   latex_needit(LATEX_COMPILER latex)
   latex_wantit(PDFLATEX_COMPILER pdflatex)
   latex_needit(BIBTEX_COMPILER bibtex)
-  latex_needit(BIBLATEX_COMPILER biber)
+  latex_wantit(BIBER_COMPILER biber)
   latex_needit(MAKEINDEX_COMPILER makeindex)
   latex_wantit(DVIPS_CONVERTER dvips)
   latex_wantit(PS2PDF_CONVERTER ps2pdf)
@@ -674,7 +682,7 @@ function(latex_setup_variables)
     CACHE STRING "latex/pdflatex flags used to create synctex file.")
   set(BIBTEX_COMPILER_FLAGS ""
     CACHE STRING "Flags passed to bibtex.")
-  set(BIBLATEX_COMPILER_FLAGS ""
+  set(BIBER_COMPILER_FLAGS ""
     CACHE STRING "Flags passed to biber.")
   set(MAKEINDEX_COMPILER_FLAGS ""
     CACHE STRING "Flags passed to makeindex.")
@@ -695,7 +703,7 @@ function(latex_setup_variables)
     PDFLATEX_COMPILER_FLAGS
     LATEX_SYNCTEX_FLAGS
     BIBTEX_COMPILER_FLAGS
-    BIBLATEX_COMPILER_FLAGS
+    BIBER_COMPILER_FLAGS
     MAKEINDEX_COMPILER_FLAGS
     MAKEGLOSSARIES_COMPILER_FLAGS
     MAKENOMENCLATURE_COMPILER_FLAGS
@@ -708,7 +716,7 @@ function(latex_setup_variables)
   separate_arguments(PDFLATEX_COMPILER_FLAGS)
   separate_arguments(LATEX_SYNCTEX_FLAGS)
   separate_arguments(BIBTEX_COMPILER_FLAGS)
-  separate_arguments(BIBLATEX_COMPILER_FLAGS)
+  separate_arguments(BIBER_COMPILER_FLAGS)
   separate_arguments(MAKEINDEX_COMPILER_FLAGS)
   separate_arguments(MAKEGLOSSARIES_COMPILER_FLAGS)
   separate_arguments(MAKENOMENCLATURE_COMPILER_FLAGS)
@@ -1291,8 +1299,11 @@ function(add_latex_targets_internal)
 
   if(LATEX_BIBFILES)
     if(LATEX_USE_BIBLATEX)
-      set(bib_compiler ${BIBLATEX_COMPILER})
-      set(bib_compiler_flags ${BIBLATEX_COMPILER_FLAGS})
+      if(NOT BIBER_COMPILER)
+	message(SEND_ERROR "I need the biber command.")
+      endif()
+      set(bib_compiler ${BIBER_COMPILER})
+      set(bib_compiler_flags ${BIBER_COMPILER_FLAGS})
     else()
       set(bib_compiler ${BIBTEX_COMPILER})
       set(bib_compiler_flags ${BIBTEX_COMPILER_FLAGS})
