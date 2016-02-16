@@ -1,0 +1,4 @@
+This test exercises the ability to build documents with bibliographies
+built from bib files. There are two documents. The first builds the
+bibliography with the typical bibtex program. The second uses the
+biblatex package and builds the bibliography with biber.
