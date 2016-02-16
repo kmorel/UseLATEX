@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{2.2.1}
+\newcommand{\UseLATEXVersion}{2.3.0}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -561,6 +561,28 @@ add_latex_document(MyDoc.tex
   MULTIBIB_NEWCITES own submitted internal
   )
   \end{CodeListing}
+
+  \subsection{\textlatexpackage{biblatex} Support}
+  \label{sec:biblatexSupport}
+
+  The \textlatexpackage{biblatex} package provides an alternate mechanism
+  for building bibliographies that has many options not available to the
+  standard bibliography commands. The package (typically) requires an
+  external program named \textprog{biber}, which is an alternative to the
+  standard \textprog{bibtex} command.
+
+  Thus, to support the \textlatexpackage{biblatex} package, the build
+  system must run \textprog{biber} instead of \textprog{bibtex}. This is
+  done simply with \UseLATEX by adding the \textcmake{USE\_BIBLATEX} option
+  to \ald.
+
+  \begin{CodeListing}
+add_latex_document(MyDoc.tex
+  BIBFILES MyDoc.bib
+  USE_BIBLATEX
+  )
+  \end{CodeListing}
+
 
   %-----------------------------------------------------------------------------
 
@@ -1213,6 +1235,8 @@ something like my-image.pdf.
   \item[Jorge Gerardo Pe\~{n}a Pastor] Support for SVG files.
   \item[Julien Schueller] Check for existence of Imagemagick convert only
     when used.
+  \item[David Tracey] Support for using \textprog{biber} command with the
+    \textcmake{USE\_BIBLATEX} option.
   \item[Raymod Wan] \textcmake{DEFAULT\_SAFEPDF} option.
   \end{description}
 
