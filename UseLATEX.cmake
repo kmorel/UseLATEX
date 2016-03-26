@@ -53,6 +53,7 @@
 #                    [USE_GLOSSARY] [USE_NOMENCL]
 #                    [FORCE_PDF] [FORCE_DVI] [FORCE_HTML]
 #                    [TARGET_NAME] <name>
+#                    [PART_OF_TARGET] <target>
 #                    [EXCLUDE_FROM_ALL]
 #                    [EXCLUDE_FROM_DEFAULTS])
 #       Adds targets that compile <tex_file>.  The latex output is placed
@@ -89,10 +90,13 @@
 #                       target, it does not delete other input files, such as
 #                       converted images, to save time on the rebuild.
 #
-#       Unless the EXCLUDE_FROM_ALL option is given, one of these targets
-#       is added to the ALL target and built by default. Which target is
-#       determined by the LATEX_DEFAULT_BUILD CMake variable. See the
-#       documentation of that variable for more details.
+#       One of these targets is added to the ALL target and built by default.
+#       Which target is determined by the LATEX_DEFAULT_BUILD CMake variable.
+#       See the documentation of that variable for more details.
+#
+#       If PART_OF_TARGET is set, this target is added as a dependency to the
+#       given target.
+#       EXCLUDE_FROM_ALL prevents this target to be added to the target ALL.
 #
 #       Unless the EXCLUDE_FROM_DEFAULTS option is given, all these targets
 #       are added as dependencies to targets named dvi, pdf, safepdf, ps,
@@ -1095,6 +1099,7 @@ function(parse_add_latex_arguments command latex_main_input)
     )
   set(oneValueArgs
     TARGET_NAME
+    PART_OF_TARGET
     )
   set(multiValueArgs
     BIBFILES
@@ -1300,14 +1305,14 @@ function(add_latex_targets_internal)
   if(LATEX_BIBFILES)
     if(LATEX_USE_BIBLATEX)
       if(NOT BIBER_COMPILER)
-	message(SEND_ERROR "I need the biber command.")
+        message(SEND_ERROR "I need the biber command.")
       endif()
       set(bib_compiler ${BIBER_COMPILER})
       set(bib_compiler_flags ${BIBER_COMPILER_FLAGS})
     else()
       set(bib_compiler ${BIBTEX_COMPILER})
       set(bib_compiler_flags ${BIBTEX_COMPILER_FLAGS})
-    endif() 
+    endif()
     if(LATEX_MULTIBIB_NEWCITES)
       foreach (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
         latex_get_filename_component(multibib_target ${multibib_auxfile} NAME_WE)
@@ -1435,6 +1440,9 @@ function(add_latex_targets_internal)
       if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(pdf ${pdf_target})
       endif()
+      if(LATEX_PART_OF_TARGET)
+        add_dependencies(${LATEX_PART_OF_TARGET} ${pdf_target})
+      endif()
     endif()
   endif()
 
@@ -1456,6 +1464,9 @@ function(add_latex_targets_internal)
     if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
       add_dependencies(dvi ${dvi_target})
     endif()
+    if(LATEX_PART_OF_TARGET)
+      add_dependencies(${LATEX_PART_OF_TARGET} ${dvi_target})
+    endif()
 
     if(DVIPS_CONVERTER)
       add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.ps
@@ -1465,6 +1476,9 @@ function(add_latex_targets_internal)
       add_custom_target(${ps_target} DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
       if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(ps ${ps_target})
+      endif()
+      if(LATEX_PART_OF_TARGET)
+        add_dependencies(${LATEX_PART_OF_TARGET} ${ps_target})
       endif()
       if(PS2PDF_CONVERTER)
         # Since both the pdf and safepdf targets have the same output, we
@@ -1477,6 +1491,9 @@ function(add_latex_targets_internal)
           )
         if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
           add_dependencies(safepdf ${safepdf_target})
+        endif()
+        if(LATEX_PART_OF_TARGET)
+          add_dependencies(${LATEX_PART_OF_TARGET} ${safepdf_target})
         endif()
       endif()
     endif()
@@ -1502,6 +1519,9 @@ function(add_latex_targets_internal)
       add_custom_target(${html_target} DEPENDS ${HTML_OUTPUT} ${dvi_target})
       if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(html ${html_target})
+      endif()
+      if(LATEX_PART_OF_TARGET)
+        add_dependencies(${LATEX_PART_OF_TARGET} ${html_target})
       endif()
     endif()
   endif()
