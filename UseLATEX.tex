@@ -1124,6 +1124,24 @@ something like my-image.pdf.
   distributions or build on other computers.  Your best course of action is
   to simply heed the warning and rename your files.
 
+  \subsection{Why are there no \textcmake{FORCE\_PS} or \textcmake{FORCE\_SAFEPDF} options?}
+  \label{sec:Why_are_there_no_FORCE_PS_or_FORCE_SAFEPDF_options}
+
+  Because you should just use the \textcmake{FORCE\_DVI} option instead.
+
+  Both the \textmaketarget{ps} and \textmaketarget{safepdf} targets are
+  built by first creating a \textfile{.dvi} file using the standard
+  \textprog{latex} program. The \textfile{.dvi} file is then converted to
+  \textfile{.ps} and subsequently to a \textfile{.pdf} file. Thus, you can
+  just enable the \textcmake{FORCE\_DVI} option to force \UseLATEX on this
+  build path.
+
+  The force options are really disabling compile paths that do not work for
+  your document. For example, \textprog{pdflatex} does not support all
+  postscript packages, so that program can fail for some documents. The
+  \textcmake{FORCE\_DVI} ensures that the document can only be built in
+  ways that support the postscript features.
+
   \subsection{Why is my image file not being automatically converted?}
   \label{sec:Why_is_my_image_file_not_being_automatically_converted}
 
