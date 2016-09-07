@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.3.0
+# Version: 2.3.1
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,10 @@
 #       in the multibib package.
 #
 # History:
+#
+#
+# 2.3.1 Support use of magick command instead of convert command for
+#       ImageMagick 7.
 #
 # 2.3.0 Add USE_BIBLATEX option to support the biblatex package, which
 #       requires using the program biber as a replacement for bibtex
@@ -725,7 +729,8 @@ function(latex_setup_variables)
   separate_arguments(PDFTOPS_CONVERTER_FLAGS)
   separate_arguments(LATEX2HTML_CONVERTER_FLAGS)
 
-  find_program(IMAGEMAGICK_CONVERT convert
+  find_program(IMAGEMAGICK_CONVERT
+    NAMES magick convert
     DOC "The convert program that comes with ImageMagick (available at http://www.imagemagick.org)."
     )
   mark_as_advanced(IMAGEMAGICK_CONVERT)
