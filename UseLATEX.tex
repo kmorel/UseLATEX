@@ -2,7 +2,7 @@
 
 \documentclass{article}
 
-\newcommand{\UseLATEXVersion}{2.3.0}
+\newcommand{\UseLATEXVersion}{2.3.1}
 \newcommand{\SANDNumber}{SAND 2008-2743P}
 
 % This wonderful package allows hyphenation in tt fonts and hyphenation of
@@ -225,20 +225,14 @@ add_latex_document(MyDoc.tex
   \end{CodeListing}
   %$
 
-  For every image file specified and found with the \textcmake{IMAGE\_DIRS}
-  and \textcmake{IMAGES} options, \UseLATEX adds makefile targets to use
-  ImageMagick's \textprog{convert} to convert the file times to those
-  appropriate for the build. (One exception is that \textprog{ps2pdf} will
-  be used when converting eps to pdf to get around a problem where
-  ImageMagick drops the bounding box information.) If you do not have
-  ImageMagick, you can get it for free from
-  \href{http://www.imagemagick.org}{http://www.imagemagick.org}. CMake will
-  also give you a \textcmakevar{LATEX\_SMALL\_IMAGES} option that, when on,
-  will downsample raster images. This can help speed up building and
-  viewing documents. It will also make the output image sizes smaller.
+  For every image file specified and found with the \textcmake{IMAGE\_DIRS} and \textcmake{IMAGES} options, \UseLATEX adds makefile targets to use ImageMagick's \textprog{magick} or \textprog{convert} to convert the file types to those appropriate for the build.\footnote{The \textprog{convert} program was essentially renamed \textprog{magick} in ImageMagick 7.0. Most, but not all, recent installations provide both. \UseLATEX looks for both just in case.}
+  If you do not have ImageMagick, you can get it for free from \href{http://www.imagemagick.org}{http://www.imagemagick.org}.
+  CMake will also give you a \textcmakevar{LATEX\_SMALL\_IMAGES} option that, when on, will downsample raster images.
+  This can help speed up building and viewing documents.
+  It will also make the output image sizes smaller.
 
   \UseLATEX will occasionally use a conversion program other than
-  ImageMagick's \textprog{convert}.  For example, \textprog{ps2pdf} will be
+  ImageMagick's \textprog{magick}.  For example, \textprog{ps2pdf} will be
   used when converting eps to pdf to get around a problem where ImageMagick
   drops the bounding box information.  When available, the
   \textprog{pdftops} from the Poppler utilities will be used to convert pdf
@@ -779,7 +773,7 @@ add_latex_document(MyDoc.tex DEPENDS generated_file.tex)
   you must use the CMake from
   \href{http://www.cmake.org/HTML/Download.html}{http://www.cmake.org/HTML/Download.html},
   the ImageMagick port from
-  \href{http://www.imagemagick.org/script/index.php}{http://www.imagemagick.org/script/index.php},
+  \href{http://www.imagemagick.org}{http://www.imagemagick.org},
   and a native build tool like MSVC or the GNU make port at
   \href{http://unxutils.sourceforge.net/}{http://unxutils.sourceforge.net/}.
   \emph{Do not use the ``native'' CMake program with any cygwin programs or
@@ -900,10 +894,9 @@ CMake Error at UseLATEX.cmake:377 (MESSAGE):
   version of ImageMagick (as specified in
   Section~\ref{sec:How_do_I_process_latex_files_on_Windows}), there are several
   other problems that users can run into the created build files attempt to
-  run the \textprog{convert} program.
+  run the \textprog{magick} or \textprog{convert} program.
 
-  A common error is that \textprog{convert} not finding a file that
-  is clearly there.
+  A common error is that \textprog{magick} or \textprog{convert} not finding a file that is clearly there.
 
   \begin{CodeListing}
 convert: unable to open image `filename'
@@ -935,17 +928,14 @@ convert.exe: unable to open image `C:': Permission denied.
 Invalid Parameter - filename
   \end{CodeListing}
 
-  This is probably because CMake has found the wrong \textprog{convert}
-  program. Windows is installed with a program named \textprog{convert} in
-  \textfile{\%SYSTEMROOT\%$\backslash$system32}. This \textprog{convert}
-  program is used to change the filesystem type on a hard drive. Since the
-  windows \textfile{convert} is in a system binary directory, it is usually
-  found in the path before the installed ImageMagick \textfile{convert}
-  program. (Don't get me started about the logic behind this.) Make sure
-  that the \textcmakevar{IMAGEMAGICK\_CONVERT} CMake variable is pointing
-  to the correct \textprog{convert} program. Recent versions of \UseLATEX
-  should give a specific warning about this with instructions on how to fix
-  it.
+  This is probably because CMake has found the wrong \textprog{convert} program.
+  Windows is installed with a program named \textprog{convert} in \textfile{\%SYSTEMROOT\%$\backslash$system32}.
+  This \textprog{convert} program is used to change the filesystem type on a hard drive.
+  Since the windows \textfile{convert} is in a system binary directory, it is usually found in the path before the installed ImageMagick \textfile{convert} program.
+  (Don't get me started about the logic behind this.)
+  Make sure that the \textcmakevar{IMAGEMAGICK\_CONVERT} CMake variable is pointing to the correct \textprog{convert} program.
+  Or better yet, make sure you have ImageMagick 7.0 or higher and use the \textprog{magick} program instead of \textprog{convert}.
+  Recent versions of \UseLATEX should give a specific warning about this with instructions on how to fix it.
 
   \subsection{How do I automate plot generation with command line programs?}
   \label{How_do_I_automate_plot_generation_with_command_line_programs}
@@ -1147,7 +1137,7 @@ something like my-image.pdf.
 
   \UseLATEX has the ability to find image files and automatically convert
   them to a format \latex understands. Usually this conversion happens with
-  the ImageMagick \textprog{convert} program.
+  the ImageMagick \textprog{magick} program.
 
   Users occasionally report that image formats that should be supported
   because ImageMagick can convert them are ignored by \UseLATEX. This can
