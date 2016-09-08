@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.3.1
+# Version: 2.3.2
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -115,6 +115,8 @@
 #
 # History:
 #
+# 2.3.2 Declare LaTeX input files as sources for targets so that they show
+#       up in IDEs like QtCreator.
 #
 # 2.3.1 Support use of magick command instead of convert command for
 #       ImageMagick 7.
@@ -1246,6 +1248,8 @@ function(add_latex_targets_internal)
     endif()
   endforeach(input)
 
+  set(all_latex_sources ${LATEX_MAIN_INPUT} ${LATEX_INPUTS} ${image_list})
+
   if(LATEX_USE_GLOSSARY)
     foreach(dummy 0 1)   # Repeat these commands twice.
       set(make_dvi_command ${make_dvi_command}
@@ -1436,7 +1440,10 @@ function(add_latex_targets_internal)
         COMMAND ${make_pdf_command}
         DEPENDS ${make_pdf_depends}
         )
-      add_custom_target(${pdf_target} DEPENDS ${output_dir}/${LATEX_TARGET}.pdf)
+      add_custom_target(${pdf_target}
+        DEPENDS ${output_dir}/${LATEX_TARGET}.pdf
+        SOURCES ${all_latex_sources}
+        )
       if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(pdf ${pdf_target})
       endif()
@@ -1457,7 +1464,10 @@ function(add_latex_targets_internal)
       COMMAND ${make_dvi_command}
       DEPENDS ${make_dvi_depends}
       )
-    add_custom_target(${dvi_target} DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
+    add_custom_target(${dvi_target}
+      DEPENDS ${output_dir}/${LATEX_TARGET}.dvi
+      SOURCES ${all_latex_sources}
+      )
     if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
       add_dependencies(dvi ${dvi_target})
     endif()
@@ -1467,7 +1477,10 @@ function(add_latex_targets_internal)
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
         DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-      add_custom_target(${ps_target} DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+      add_custom_target(${ps_target}
+        DEPENDS ${output_dir}/${LATEX_TARGET}.ps
+        SOURCES ${all_latex_sources}
+        )
       if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(ps ${ps_target})
       endif()
@@ -1504,7 +1517,10 @@ function(add_latex_targets_internal)
           ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
         DEPENDS ${output_dir}/${LATEX_TARGET}.tex
         )
-      add_custom_target(${html_target} DEPENDS ${HTML_OUTPUT} ${dvi_target})
+      add_custom_target(${html_target}
+        DEPENDS ${HTML_OUTPUT} ${dvi_target}
+        SOURCES ${all_latex_sources}
+        )
       if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
         add_dependencies(html ${html_target})
       endif()
