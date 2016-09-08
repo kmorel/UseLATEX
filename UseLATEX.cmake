@@ -118,6 +118,10 @@
 # 2.3.2 Declare LaTeX input files as sources for targets so that they show
 #       up in IDEs like QtCreator.
 #
+#       Fix issue where main tex files in subdirectories were creating
+#       invalid targets for building HTML. Just disable the HTML targets in
+#       this case.
+#
 # 2.3.1 Support use of magick command instead of convert command for
 #       ImageMagick 7.
 #
@@ -1170,6 +1174,10 @@ function(add_latex_targets_internal)
     set(LATEX_TARGET_NAME ${LATEX_TARGET})
   endif()
 
+  # Some LaTeX commands may need to be modified (or may not work) if the main
+  # tex file is in a subdirectory. Make a flag for that.
+  get_filename_component(LATEX_MAIN_INPUT_SUBDIR ${LATEX_MAIN_INPUT} DIRECTORY)
+
   # Set up target names.
   set(dvi_target      ${LATEX_TARGET_NAME}_dvi)
   set(pdf_target      ${LATEX_TARGET_NAME}_pdf)
@@ -1505,7 +1513,18 @@ function(add_latex_targets_internal)
       set(default_build html)
     endif()
 
-    if(LATEX2HTML_CONVERTER)
+    if(LATEX2HTML_CONVERTER AND LATEX_MAIN_INPUT_SUBDIR)
+      message(STATUS
+	"Disabling HTML build for ${LATEX_TARGET_NAME}.tex because the main file is in subdirectory ${LATEX_MAIN_INPUT_SUBDIR}"
+	)
+      # The code below to run HTML assumes that LATEX_TARGET.tex is in the
+      # current directory. I have tried to specify that LATEX_TARGET.tex is
+      # in a subdirectory. That makes the build targets correct, but the
+      # HTML build still fails (at least for htlatex) because files are not
+      # generated where expected. I am getting around the problem by simply
+      # disabling HTML in this case. If someone really cares, they can fix
+      # this, but make sure it runs on many platforms and build programs.
+    elseif(LATEX2HTML_CONVERTER)
       if(USING_HTLATEX)
         # htlatex places the output in a different location
         set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
