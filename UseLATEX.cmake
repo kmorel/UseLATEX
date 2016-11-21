@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.3.2
+# Version: 2.3.3
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,10 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.3.3 Remove "-r 600" from the default PDFTOPS_CONVERTER_FLAGS. The -r flag
+#       is available from the Poppler version of pdftops, but not the Xpdf
+#       version.
 #
 # 2.3.2 Declare LaTeX input files as sources for targets so that they show
 #       up in IDEs like QtCreator.
@@ -704,7 +708,7 @@ function(latex_setup_variables)
     CACHE STRING "Flags passed to dvips.")
   set(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
     CACHE STRING "Flags passed to ps2pdf.")
-  set(PDFTOPS_CONVERTER_FLAGS -r 600
+  set(PDFTOPS_CONVERTER_FLAGS ""
     CACHE STRING "Flags passed to pdftops.")
   set(LATEX2HTML_CONVERTER_FLAGS ""
     CACHE STRING "Flags passed to latex2html.")
@@ -1317,7 +1321,7 @@ function(add_latex_targets_internal)
   if(LATEX_BIBFILES)
     if(LATEX_USE_BIBLATEX)
       if(NOT BIBER_COMPILER)
-	message(SEND_ERROR "I need the biber command.")
+        message(SEND_ERROR "I need the biber command.")
       endif()
       set(bib_compiler ${BIBER_COMPILER})
       set(bib_compiler_flags ${BIBER_COMPILER_FLAGS})
@@ -1515,8 +1519,8 @@ function(add_latex_targets_internal)
 
     if(LATEX2HTML_CONVERTER AND LATEX_MAIN_INPUT_SUBDIR)
       message(STATUS
-	"Disabling HTML build for ${LATEX_TARGET_NAME}.tex because the main file is in subdirectory ${LATEX_MAIN_INPUT_SUBDIR}"
-	)
+        "Disabling HTML build for ${LATEX_TARGET_NAME}.tex because the main file is in subdirectory ${LATEX_MAIN_INPUT_SUBDIR}"
+        )
       # The code below to run HTML assumes that LATEX_TARGET.tex is in the
       # current directory. I have tried to specify that LATEX_TARGET.tex is
       # in a subdirectory. That makes the build targets correct, but the
