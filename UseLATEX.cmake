@@ -119,6 +119,9 @@
 #       is available from the Poppler version of pdftops, but not the Xpdf
 #       version.
 #
+#       Fix an issue with the flags for the different programs not being
+#       properly separated.
+#
 # 2.3.2 Declare LaTeX input files as sources for targets so that they show
 #       up in IDEs like QtCreator.
 #
@@ -496,10 +499,10 @@ function(latex_makeglossaries)
         set(codepage_flags "")
       endif()
 
-      message("${XINDY_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} ${language_flags} ${codepage_flags} -I xindy -M ${glossary_name} -t ${glossary_log} -o ${glossary_out} ${glossary_in}"
+      message("${XINDY_COMPILER} ${MAKEGLOSSARIES_COMPILER_ARGS} ${language_flags} ${codepage_flags} -I xindy -M ${glossary_name} -t ${glossary_log} -o ${glossary_out} ${glossary_in}"
         )
       exec_program(${XINDY_COMPILER}
-        ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+        ARGS ${MAKEGLOSSARIES_COMPILER_ARGS}
           ${language_flags}
           ${codepage_flags}
           -I xindy
@@ -518,7 +521,7 @@ function(latex_makeglossaries)
       if("${xindy_output}" MATCHES "^Cannot locate xindy module for language (.+) in codepage (.+)\\.$")
         message("*************** Retrying xindy with default codepage.")
         exec_program(${XINDY_COMPILER}
-          ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+          ARGS ${MAKEGLOSSARIES_COMPILER_ARGS}
             ${language_flags}
             -I xindy
             -M ${glossary_name}
@@ -529,8 +532,8 @@ function(latex_makeglossaries)
       endif()
 
     else()
-      message("${MAKEINDEX_COMPILER} ${MAKEGLOSSARIES_COMPILER_FLAGS} -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}")
-      exec_program(${MAKEINDEX_COMPILER} ARGS ${MAKEGLOSSARIES_COMPILER_FLAGS}
+      message("${MAKEINDEX_COMPILER} ${MAKEGLOSSARIES_COMPILER_ARGS} -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}")
+      exec_program(${MAKEINDEX_COMPILER} ARGS ${MAKEGLOSSARIES_COMPILER_ARGS}
         -s ${istfile} -t ${glossary_log} -o ${glossary_out} ${glossary_in}
         )
     endif()
@@ -551,7 +554,7 @@ function(latex_makenomenclature)
   set(nomencl_out ${LATEX_TARGET}.nls)
   set(nomencl_in ${LATEX_TARGET}.nlo)
 
-  exec_program(${MAKEINDEX_COMPILER} ARGS ${MAKENOMENCLATURE_COMPILER_FLAGS}
+  exec_program(${MAKEINDEX_COMPILER} ARGS ${MAKENOMENCLATURE_COMPILER_ARGS}
     ${nomencl_in} -s "nomencl.ist" -o ${nomencl_out}
     )
 endfunction(latex_makenomenclature)
@@ -726,6 +729,13 @@ function(latex_setup_variables)
     PDFTOPS_CONVERTER_FLAGS
     LATEX2HTML_CONVERTER_FLAGS
     )
+
+  # Because it is easier to type, the flags variables are entered as
+  # space-separated strings much like you would in a shell. However, when
+  # using a CMake command to execute a program, it works better to hold the
+  # arguments in semicolon-separated lists (otherwise the whole string will
+  # be interpreted as a single argument). Use the separate_arguments to
+  # convert the space-separated strings to semicolon-separated lists.
   separate_arguments(LATEX_COMPILER_FLAGS)
   separate_arguments(PDFLATEX_COMPILER_FLAGS)
   separate_arguments(LATEX_SYNCTEX_FLAGS)
@@ -738,6 +748,24 @@ function(latex_setup_variables)
   separate_arguments(PS2PDF_CONVERTER_FLAGS)
   separate_arguments(PDFTOPS_CONVERTER_FLAGS)
   separate_arguments(LATEX2HTML_CONVERTER_FLAGS)
+
+  # Not quite done. When you call separate_arguments on a cache variable,
+  # the result is written to a local variable. That local variable goes
+  # away when this function returns (which is before any of them are used).
+  # So, copy these variables with local scope to cache variables with
+  # global scope.
+  set(LATEX_COMPILER_ARGS "${LATEX_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(PDFLATEX_COMPILER_ARGS "${PDFLATEX_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(LATEX_SYNCTEX_ARGS "${LATEX_SYNCTEX_FLAGS}" CACHE INTERNAL "")
+  set(BIBTEX_COMPILER_ARGS "${BIBTEX_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(BIBER_COMPILER_ARGS "${BIBER_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(MAKEINDEX_COMPILER_ARGS "${MAKEINDEX_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(MAKEGLOSSARIES_COMPILER_ARGS "${MAKEGLOSSARIES_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(MAKENOMENCLATURE_COMPILER_ARGS "${MAKENOMENCLATURE_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(DVIPS_CONVERTER_ARGS "${DVIPS_CONVERTER_FLAGS}" CACHE INTERNAL "")
+  set(PS2PDF_CONVERTER_ARGS "${PS2PDF_CONVERTER_FLAGS}" CACHE INTERNAL "")
+  set(PDFTOPS_CONVERTER_ARGS "${PDFTOPS_CONVERTER_FLAGS}" CACHE INTERNAL "")
+  set(LATEX2HTML_CONVERTER_ARGS "${LATEX2HTML_CONVERTER_FLAGS}" CACHE INTERNAL "")
 
   find_program(IMAGEMAGICK_CONVERT
     NAMES magick convert
@@ -879,7 +907,7 @@ function(latex_add_convert_command
     if(PS2PDF_CONVERTER)
       set(require_imagemagick_convert FALSE)
       set(converter ${PS2PDF_CONVERTER})
-      set(convert_flags -dEPSCrop ${PS2PDF_CONVERTER_FLAGS})
+      set(convert_flags -dEPSCrop ${PS2PDF_CONVERTER_ARGS})
     else()
       message(SEND_ERROR "Using postscript files with pdflatex requires ps2pdf for conversion.")
     endif()
@@ -890,7 +918,7 @@ function(latex_add_convert_command
     if(PDFTOPS_CONVERTER)
       set(require_imagemagick_convert FALSE)
       set(converter ${PDFTOPS_CONVERTER})
-      set(convert_flags -eps ${PDFTOPS_CONVERTER_FLAGS})
+      set(convert_flags -eps ${PDFTOPS_CONVERTER_ARGS})
     else()
       message(STATUS "Consider getting pdftops from Poppler to convert PDF images to EPS images.")
       set(convert_flags ${flags})
@@ -1161,17 +1189,17 @@ endfunction(parse_add_latex_arguments)
 
 function(add_latex_targets_internal)
   if(LATEX_USE_SYNCTEX)
-    set(synctex_flags ${LATEX_SYNCTEX_FLAGS})
+    set(synctex_flags ${LATEX_SYNCTEX_ARGS})
   else()
     set(synctex_flags)
   endif()
 
   # The commands to run LaTeX.  They are repeated multiple times.
   set(latex_build_command
-    ${LATEX_COMPILER} ${LATEX_COMPILER_FLAGS} ${synctex_flags} ${LATEX_MAIN_INPUT}
+    ${LATEX_COMPILER} ${LATEX_COMPILER_ARGS} ${synctex_flags} ${LATEX_MAIN_INPUT}
     )
   set(pdflatex_build_command
-    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_FLAGS} ${synctex_flags} ${LATEX_MAIN_INPUT}
+    ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_ARGS} ${synctex_flags} ${LATEX_MAIN_INPUT}
     )
 
   if(NOT LATEX_TARGET_NAME)
@@ -1271,7 +1299,7 @@ function(add_latex_targets_internal)
         -D LATEX_TARGET=${LATEX_TARGET}
         -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
         -D XINDY_COMPILER=${XINDY_COMPILER}
-        -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+        -D MAKEGLOSSARIES_COMPILER_ARGS=${MAKEGLOSSARIES_COMPILER_ARGS}
         -P ${LATEX_USE_LATEX_LOCATION}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${latex_build_command}
@@ -1283,7 +1311,7 @@ function(add_latex_targets_internal)
         -D LATEX_TARGET=${LATEX_TARGET}
         -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
         -D XINDY_COMPILER=${XINDY_COMPILER}
-        -D MAKEGLOSSARIES_COMPILER_FLAGS=${MAKEGLOSSARIES_COMPILER_FLAGS}
+        -D MAKEGLOSSARIES_COMPILER_ARGS=${MAKEGLOSSARIES_COMPILER_ARGS}
         -P ${LATEX_USE_LATEX_LOCATION}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${pdflatex_build_command}
@@ -1299,7 +1327,7 @@ function(add_latex_targets_internal)
         -D LATEX_BUILD_COMMAND=makenomenclature
         -D LATEX_TARGET=${LATEX_TARGET}
         -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
-        -D MAKENOMENCLATURE_COMPILER_FLAGS=${MAKENOMENCLATURE_COMPILER_FLAGS}
+        -D MAKENOMENCLATURE_COMPILER_ARGS=${MAKENOMENCLATURE_COMPILER_ARGS}
         -P ${LATEX_USE_LATEX_LOCATION}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${latex_build_command}
@@ -1310,7 +1338,7 @@ function(add_latex_targets_internal)
         -D LATEX_BUILD_COMMAND=makenomenclature
         -D LATEX_TARGET=${LATEX_TARGET}
         -D MAKEINDEX_COMPILER=${MAKEINDEX_COMPILER}
-        -D MAKENOMENCLATURE_COMPILER_FLAGS=${MAKENOMENCLATURE_COMPILER_FLAGS}
+        -D MAKENOMENCLATURE_COMPILER_ARGS=${MAKENOMENCLATURE_COMPILER_ARGS}
         -P ${LATEX_USE_LATEX_LOCATION}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${pdflatex_build_command}
@@ -1324,10 +1352,10 @@ function(add_latex_targets_internal)
         message(SEND_ERROR "I need the biber command.")
       endif()
       set(bib_compiler ${BIBER_COMPILER})
-      set(bib_compiler_flags ${BIBER_COMPILER_FLAGS})
+      set(bib_compiler_flags ${BIBER_COMPILER_ARGS})
     else()
       set(bib_compiler ${BIBTEX_COMPILER})
-      set(bib_compiler_flags ${BIBTEX_COMPILER_FLAGS})
+      set(bib_compiler_flags ${BIBTEX_COMPILER_ARGS})
     endif() 
     if(LATEX_MULTIBIB_NEWCITES)
       foreach (multibib_auxfile ${LATEX_MULTIBIB_NEWCITES})
@@ -1371,12 +1399,12 @@ function(add_latex_targets_internal)
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${latex_build_command}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${idx_name}.idx)
+        ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_ARGS} ${idx_name}.idx)
       set(make_pdf_command ${make_pdf_command}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${pdflatex_build_command}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_FLAGS} ${idx_name}.idx)
+        ${MAKEINDEX_COMPILER} ${MAKEINDEX_COMPILER_ARGS} ${idx_name}.idx)
       set(auxiliary_clean_files ${auxiliary_clean_files}
         ${output_dir}/${idx_name}.idx
         ${output_dir}/${idx_name}.ilg
@@ -1487,7 +1515,7 @@ function(add_latex_targets_internal)
     if(DVIPS_CONVERTER)
       add_custom_command(OUTPUT ${output_dir}/${LATEX_TARGET}.ps
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-        ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
+        ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_ARGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
         DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
       add_custom_target(${ps_target}
         DEPENDS ${output_dir}/${LATEX_TARGET}.ps
@@ -1502,7 +1530,7 @@ function(add_latex_targets_internal)
         # simply force a recompile every time.
         add_custom_target(${safepdf_target}
           ${CMAKE_COMMAND} -E chdir ${output_dir}
-          ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_FLAGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
+          ${PS2PDF_CONVERTER} ${PS2PDF_CONVERTER_ARGS} ${LATEX_TARGET}.ps ${LATEX_TARGET}.pdf
           DEPENDS ${ps_target}
           )
         if(NOT LATEX_EXCLUDE_FROM_DEFAULTS)
@@ -1537,7 +1565,7 @@ function(add_latex_targets_internal)
       endif()
       add_custom_command(OUTPUT ${HTML_OUTPUT}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-          ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
+          ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_ARGS} ${LATEX_MAIN_INPUT}
         DEPENDS ${output_dir}/${LATEX_TARGET}.tex
         )
       add_custom_target(${html_target}
