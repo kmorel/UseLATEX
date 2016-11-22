@@ -129,6 +129,9 @@
 #       output more quiet and prints out the file/line where errors occur.
 #       (Thanks to Nikos Koukis.)
 #
+#       After a LaTeX build, check the log file for warnings that are
+#       indicative of problems with the build.
+#
 # 2.3.2 Declare LaTeX input files as sources for targets so that they show
 #       up in IDEs like QtCreator.
 #
@@ -623,6 +626,49 @@ function(latex_correct_synctex)
   endif()
 
 endfunction(latex_correct_synctex)
+
+function(latex_check_important_warnings)
+  set(log_file ${LATEX_TARGET}.log)
+
+  message("\nChecking ${log_file} for important warnings.")
+  if(NOT LATEX_TARGET)
+    message(SEND_ERROR "Need to define LATEX_TARGET")
+  endif()
+
+  if(NOT EXISTS ${log_file})
+    message("Could not find log file: ${log_file}")
+    return()
+  endif()
+
+  set(found_error)
+
+  # Check for undefined references
+  file(STRINGS ${log_file} reference_warnings REGEX "Reference.*undefined")
+  if(reference_warnings)
+    set(found_error TRUE)
+    message("\nFound missing reference warnings.")
+    foreach(warning ${reference_warnings})
+      message("${warning}")
+    endforeach(warning)
+  endif()
+
+  # Check for overfull
+  file(STRINGS ${log_file} overfull_warnings REGEX "^Overfull")
+  if(overfull_warnings)
+    set(found_error TRUE)
+    message("\nFound overfull warnings. These are indicative of layout errors.")
+    foreach(warning ${overfull_warnings})
+      message("${warning}")
+    endforeach(warning)
+  endif()
+
+  if(found_error)
+    latex_get_filename_component(log_file_path ${log_file} ABSOLUTE)
+    message("\nConsult ${log_file_path} for more information on LaTeX build.")
+  else()
+    message("No known important warnings found.")
+  endif(found_error)
+endfunction(latex_check_important_warnings)
 
 #############################################################################
 # Helper functions for establishing LaTeX build.
@@ -1478,6 +1524,22 @@ function(add_latex_targets_internal)
       )
   endif()
 
+  # Check LaTeX output for important warnings at end of build
+  set(make_dvi_command ${make_dvi_command}
+    COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+    ${CMAKE_COMMAND}
+      -D LATEX_BUILD_COMMAND=check_important_warnings
+      -D LATEX_TARGET=${LATEX_TARGET}
+      -P ${LATEX_USE_LATEX_LOCATION}
+    )
+  set(make_pdf_command ${make_pdf_command}
+    COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+    ${CMAKE_COMMAND}
+      -D LATEX_BUILD_COMMAND=check_important_warnings
+      -D LATEX_TARGET=${LATEX_TARGET}
+      -P ${LATEX_USE_LATEX_LOCATION}
+    )
+
   # Capture the default build.
   string(TOLOWER "${LATEX_DEFAULT_BUILD}" default_build)
 
@@ -1676,6 +1738,11 @@ if(LATEX_BUILD_COMMAND)
 
   if("${LATEX_BUILD_COMMAND}" STREQUAL correct_synctex)
     latex_correct_synctex()
+    set(command_handled TRUE)
+  endif()
+
+  if("${LATEX_BUILD_COMMAND}" STREQUAL check_important_warnings)
+    latex_check_important_warnings()
     set(command_handled TRUE)
   endif()
 
