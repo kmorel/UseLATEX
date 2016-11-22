@@ -1208,6 +1208,31 @@ something like my-image.pdf.
   option. (Once again, see Section~\ref{sec:BuldingMultipleLatexDocuments}
   for more details.)
 
+  \subsection{What is the point of the default \latex arguments?}
+  \label{sec:What_is_the_point_of_the_default_latex_arguments}
+
+  The \latex commands (e.g. \textprog{latex} and \textprog{pdflatex}) were originally designed to be run interactively.
+  The \textfile{tex} file is fed to the interpreter and verbose responses are generated.
+  When an error is encountered, \latex stops and provides a prompt to type commands to resolve the problem.
+  This interactive mode of building a \latex file is problematic when attempting to automate it in a batch or build system.
+  Thus, the \textcmakevar{LATEX\_COMPILER\_FLAGS} and \textcmakevar{PDFLATEX\_COMPILER\_FLAGS}, which contain the command line flags passed to the \latex program, are initialized to modify the behavior to work better in a build system.
+
+  The first flag added is \mbox{\textcmake{-interaction=batchmode}}.
+  This flag does two major things.
+  The first thing this flag does is hide most of the \latex output.
+  A typical \latex build contains extremely verbose status messages that provide all sorts of useless information.
+  Any important information (like a syntax error) is easily lost.
+  Instead, you have to consult the \textfile{.log} file to see the full output.
+  Because important warnings can be hidden along with the unimportant, \UseLATEX performs several greps of the log file after the build to look for the most important warnings encountered with \latex.
+
+  The second thing the \mbox{\textcmake{-interaction=batchmode}} flag does is to change the behavior of \latex when an error occurs.
+  Rather than enter an interactive prompt, the \latex program simply quits.
+  This is how pretty much every build system expects a compiler to behave.
+
+  The second flag added is \mbox{\textcmake{-file-line-error}}.
+  For some odd reason the default behavior of \latex is to simply print out a message and leave it you to trace the location of the error.
+  Instead, this flag instructs \latex to prepend the filename and line number to every error to simplify finding the error.
+
   \subsection{Why do the \textprog{ps2pdf} arguments have the \textcmake{\#} character in them?}
   \label{sec:Why_do_the_ps2pdf_arguments_have_the_hash_character_in_them}
 
@@ -1254,6 +1279,8 @@ something like my-image.pdf.
   \item[Tomasz Grzegurzko] Support for htlatex.
   \item[\O{}ystein S. Haaland] Support for making glossaries.
   \item[Sven Klomp] Help with \synctex support.
+  \item[Nikos Koukis]
+    Suggestions for default \textprog{latex} options.
   \item[Thimo Langbehn] Support for pstricks with the
     \textcmake{--enable-write18} option.
   \item[Antonio LaTorre] Support for the \textlatexpackage{multibib}
