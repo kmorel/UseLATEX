@@ -132,6 +132,11 @@
 #       After a LaTeX build, check the log file for warnings that are
 #       indicative of problems with the build.
 #
+#       Remove support for latex2html. Instead, use the htlatex program.
+#       This is now part of TeX Live and most other distributions. It also
+#       behaves much more like the other LaTeX programs. Also fixed some
+#       nasty issues with the htlatex arguments.
+#
 # 2.3.2 Declare LaTeX input files as sources for targets so that they show
 #       up in IDEs like QtCreator.
 #
@@ -705,6 +710,12 @@ function(latex_setup_variables)
     DOC "The pdf to ps converter program from the Poppler package."
     )
 
+  find_program(HTLATEX_COMPILER
+    NAMES htlatex
+    PATHS ${MIKTEX_BINARY_PATH}
+      /usr/bin
+    )
+
   mark_as_advanced(
     LATEX_COMPILER
     PDFLATEX_COMPILER
@@ -716,38 +727,31 @@ function(latex_setup_variables)
     PS2PDF_CONVERTER
     PDFTOPS_CONVERTER
     LATEX2HTML_CONVERTER
+    HTLATEX_COMPILER
     )
 
   latex_needit(LATEX_COMPILER latex)
   latex_wantit(PDFLATEX_COMPILER pdflatex)
+  latex_wantit(HTLATEX_COMPILER htlatex)
   latex_needit(BIBTEX_COMPILER bibtex)
   latex_wantit(BIBER_COMPILER biber)
   latex_needit(MAKEINDEX_COMPILER makeindex)
   latex_wantit(DVIPS_CONVERTER dvips)
   latex_wantit(PS2PDF_CONVERTER ps2pdf)
   latex_wantit(PDFTOPS_CONVERTER pdftops)
-  # MiKTeX calls latex2html htlatex
-  if(NOT ${LATEX2HTML_CONVERTER})
-    find_program(HTLATEX_CONVERTER
-      NAMES htlatex
-      PATHS ${MIKTEX_BINARY_PATH}
-            /usr/bin
-      )
-    mark_as_advanced(HTLATEX_CONVERTER)
-    if(HTLATEX_CONVERTER)
-      set(USING_HTLATEX TRUE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
-      set(LATEX2HTML_CONVERTER ${HTLATEX_CONVERTER}
-        CACHE FILEPATH "htlatex taking the place of latex2html" FORCE)
-    else()
-      set(USING_HTLATEX FALSE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
-    endif()
-  endif()
-  latex_wantit(LATEX2HTML_CONVERTER latex2html)
 
   set(LATEX_COMPILER_FLAGS "-interaction=batchmode -file-line-error"
     CACHE STRING "Flags passed to latex.")
   set(PDFLATEX_COMPILER_FLAGS ${LATEX_COMPILER_FLAGS}
     CACHE STRING "Flags passed to pdflatex.")
+  set(HTLATEX_COMPILER_TEX4HT_FLAGS "html"
+    CACHE STRING "Options for the tex4ht.sty and *.4ht style files.")
+  set(HTLATEX_COMPILER_TEX4HT_POSTPROCESSOR_FLAGS ""
+    CACHE STRING "Options for the text4ht postprocessor.")
+  set(HTLATEX_COMPILER_T4HT_POSTPROCESSOR_FLAGS ""
+    CACHE STRING "Options for the t4ht postprocessor.")
+  set(HTLATEX_COMPILER_LATEX_FLAGS ${LATEX_COMPILER_FLAGS}
+    CACHE STRING "Flags passed from htlatex to the LaTeX compiler.")
   set(LATEX_SYNCTEX_FLAGS "-synctex=1"
     CACHE STRING "latex/pdflatex flags used to create synctex file.")
   set(BIBTEX_COMPILER_FLAGS ""
@@ -775,11 +779,13 @@ function(latex_setup_variables)
   endif()
   set(PDFTOPS_CONVERTER_FLAGS ""
     CACHE STRING "Flags passed to pdftops.")
-  set(LATEX2HTML_CONVERTER_FLAGS ""
-    CACHE STRING "Flags passed to latex2html.")
   mark_as_advanced(
     LATEX_COMPILER_FLAGS
     PDFLATEX_COMPILER_FLAGS
+    HTLATEX_COMPILER_TEX4HT_FLAGS
+    HTLATEX_COMPILER_TEX4HT_POSTPROCESSOR_FLAGS
+    HTLATEX_COMPILER_T4HT_POSTPROCESSOR_FLAGS
+    HTLATEX_COMPILER_LATEX_FLAGS
     LATEX_SYNCTEX_FLAGS
     BIBTEX_COMPILER_FLAGS
     BIBER_COMPILER_FLAGS
@@ -789,7 +795,6 @@ function(latex_setup_variables)
     DVIPS_CONVERTER_FLAGS
     PS2PDF_CONVERTER_FLAGS
     PDFTOPS_CONVERTER_FLAGS
-    LATEX2HTML_CONVERTER_FLAGS
     )
 
   # Because it is easier to type, the flags variables are entered as
@@ -800,6 +805,7 @@ function(latex_setup_variables)
   # convert the space-separated strings to semicolon-separated lists.
   separate_arguments(LATEX_COMPILER_FLAGS)
   separate_arguments(PDFLATEX_COMPILER_FLAGS)
+  separate_arguments(HTLATEX_COMPILER_LATEX_FLAGS)
   separate_arguments(LATEX_SYNCTEX_FLAGS)
   separate_arguments(BIBTEX_COMPILER_FLAGS)
   separate_arguments(BIBER_COMPILER_FLAGS)
@@ -809,7 +815,6 @@ function(latex_setup_variables)
   separate_arguments(DVIPS_CONVERTER_FLAGS)
   separate_arguments(PS2PDF_CONVERTER_FLAGS)
   separate_arguments(PDFTOPS_CONVERTER_FLAGS)
-  separate_arguments(LATEX2HTML_CONVERTER_FLAGS)
 
   # Not quite done. When you call separate_arguments on a cache variable,
   # the result is written to a local variable. That local variable goes
@@ -818,6 +823,7 @@ function(latex_setup_variables)
   # global scope.
   set(LATEX_COMPILER_ARGS "${LATEX_COMPILER_FLAGS}" CACHE INTERNAL "")
   set(PDFLATEX_COMPILER_ARGS "${PDFLATEX_COMPILER_FLAGS}" CACHE INTERNAL "")
+  set(HTLATEX_COMPILER_ARGS "${HTLATEX_COMPILER_LATEX_FLAGS}" CACHE INTERNAL "")
   set(LATEX_SYNCTEX_ARGS "${LATEX_SYNCTEX_FLAGS}" CACHE INTERNAL "")
   set(BIBTEX_COMPILER_ARGS "${BIBTEX_COMPILER_FLAGS}" CACHE INTERNAL "")
   set(BIBER_COMPILER_ARGS "${BIBER_COMPILER_FLAGS}" CACHE INTERNAL "")
@@ -827,7 +833,6 @@ function(latex_setup_variables)
   set(DVIPS_CONVERTER_ARGS "${DVIPS_CONVERTER_FLAGS}" CACHE INTERNAL "")
   set(PS2PDF_CONVERTER_ARGS "${PS2PDF_CONVERTER_FLAGS}" CACHE INTERNAL "")
   set(PDFTOPS_CONVERTER_ARGS "${PDFTOPS_CONVERTER_FLAGS}" CACHE INTERNAL "")
-  set(LATEX2HTML_CONVERTER_ARGS "${LATEX2HTML_CONVERTER_FLAGS}" CACHE INTERNAL "")
 
   find_program(IMAGEMAGICK_CONVERT
     NAMES magick convert
@@ -1623,7 +1628,7 @@ function(add_latex_targets_internal)
       set(default_build html)
     endif()
 
-    if(LATEX2HTML_CONVERTER AND LATEX_MAIN_INPUT_SUBDIR)
+    if(HTLATEX_COMPILER AND LATEX_MAIN_INPUT_SUBDIR)
       message(STATUS
         "Disabling HTML build for ${LATEX_TARGET_NAME}.tex because the main file is in subdirectory ${LATEX_MAIN_INPUT_SUBDIR}"
         )
@@ -1634,17 +1639,20 @@ function(add_latex_targets_internal)
       # generated where expected. I am getting around the problem by simply
       # disabling HTML in this case. If someone really cares, they can fix
       # this, but make sure it runs on many platforms and build programs.
-    elseif(LATEX2HTML_CONVERTER)
-      if(USING_HTLATEX)
-        # htlatex places the output in a different location
-        set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
-      else()
-        set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}/${LATEX_TARGET}.html")
-      endif()
+    elseif(HTLATEX_COMPILER)
+      # htlatex places the output in a different location
+      set(HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
       add_custom_command(OUTPUT ${HTML_OUTPUT}
         COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
-          ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_ARGS} ${LATEX_MAIN_INPUT}
-        DEPENDS ${output_dir}/${LATEX_TARGET}.tex
+          ${HTLATEX_COMPILER} ${LATEX_MAIN_INPUT}
+          "${HTLATEX_COMPILER_TEX4HT_FLAGS}"
+          "${HTLATEX_COMPILER_TEX4HT_POSTPROCESSOR_FLAGS}"
+          "${HTLATEX_COMPILER_T4HT_POSTPROCESSOR_FLAGS}"
+          ${HTLATEX_COMPILER_ARGS}
+        DEPENDS
+          ${output_dir}/${LATEX_TARGET}.tex
+          ${output_dir}/${LATEX_TARGET}.dvi
+        VERBATIM
         )
       add_custom_target(${html_target}
         DEPENDS ${HTML_OUTPUT} ${dvi_target}
