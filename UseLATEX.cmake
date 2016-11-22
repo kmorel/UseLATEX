@@ -125,6 +125,10 @@
 #       Fix an issue on windows where the = character is not allowed for
 #       ps2pdf arguments.
 #
+#       Change default arguments for latex and pdflatex commands. Makes the
+#       output more quiet and prints out the file/line where errors occur.
+#       (Thanks to Nikos Koukis.)
+#
 # 2.3.2 Declare LaTeX input files as sources for targets so that they show
 #       up in IDEs like QtCreator.
 #
@@ -694,7 +698,7 @@ function(latex_setup_variables)
   endif()
   latex_wantit(LATEX2HTML_CONVERTER latex2html)
 
-  set(LATEX_COMPILER_FLAGS "-interaction=nonstopmode"
+  set(LATEX_COMPILER_FLAGS "-interaction=batchmode -file-line-error"
     CACHE STRING "Flags passed to latex.")
   set(PDFLATEX_COMPILER_FLAGS ${LATEX_COMPILER_FLAGS}
     CACHE STRING "Flags passed to pdflatex.")
