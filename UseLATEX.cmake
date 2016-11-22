@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.3.3
+# Version: 2.4.0
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -115,7 +115,7 @@
 #
 # History:
 #
-# 2.3.3 Remove "-r 600" from the default PDFTOPS_CONVERTER_FLAGS. The -r flag
+# 2.4.0 Remove "-r 600" from the default PDFTOPS_CONVERTER_FLAGS. The -r flag
 #       is available from the Poppler version of pdftops, but not the Xpdf
 #       version.
 #
