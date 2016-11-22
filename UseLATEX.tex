@@ -1208,6 +1208,32 @@ something like my-image.pdf.
   option. (Once again, see Section~\ref{sec:BuldingMultipleLatexDocuments}
   for more details.)
 
+  \subsection{Why do the \textprog{ps2pdf} arguments have the \textcmake{\#} character in them?}
+  \label{sec:Why_do_the_ps2pdf_arguments_have_the_hash_character_in_them}
+
+  When calling the \textprog{ps2pdf} program, it is typical to use several arguments that are passed to the underlying ghostscript system.
+  These arguments often take the form of an option followed by an equal (\textcmake{=}) character and then the value for that option.
+  For example, arguments like \mbox{\textcmake{-dCompatibilityLevel=1.3}}, \mbox{\textcmake{-dEmbedAllFonts=true}}, and \mbox{\textcmake{-dColorImageFilter=/FlateEncode}} are common.
+  This is a standard convention for command line arguments in systems using Unix-like shells.
+
+  In truth, the \textprog{ps2pdf} program and its variants are actually shell scripts that provide a simplified interface for calling the \textprog{gs} ghostscript program.
+  On Unix-like systems they are naturally enough implemented as shell scripts.
+  However, the standard Windows port instead uses \textprog{bat} scripts, which are native to that system.
+  Unfortunately, the interpreter for \textprog{bat} scripts treats the \textcmake{=} character as special.
+  Ultimately it will split the arguments on the \textcmake{=} character, and that will lead to strange errors from \textprog{ps2pdf}.
+  For example, on Windows the \mbox{\textcmake{-dCompatibilityLevel=1.3}} argument will be split into the arguments \mbox{\textcmake{-dCompatibilityLevel}} and \mbox{\textcmake{1.3}}.
+  \textprog{ps2pdf} will think \mbox{\textcmake{1.3}} is referring to the input file name and give an obtuse error about the file not being found.
+
+  The workaround is that \textprog{gs} (and therefore all its derived scripts like \textprog{ps2pdf}) support using the \textcmake{\#} character in lieu of \textcmake{=}.
+  Thus, on Windows machines, \UseLATEX defaults to an alternate set of arguments for \textprog{ps2pdf} that use \textcmake{\#} in them.
+
+  An issue you might encounter is that the \textcmake{\#} character is also frequently treated as special by script and build interpreter.
+  It is most often used to define a comment.
+  For this reason the \textcmake{\#} variant is only used on Windows where it is most likely to be needed.
+  The build systems I have tried seem pretty resilient to using \textcmake{\#} in commands.
+  If you have issues running \textprog{ps2pdf} with either character, you can attempt to resolve the problem by switching back and forth.
+  If you do notice a problem, please let us know so that we can fix it for other users.
+
   %-----------------------------------------------------------------------------
 
 

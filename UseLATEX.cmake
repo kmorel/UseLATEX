@@ -122,6 +122,9 @@
 #       Fix an issue with the flags for the different programs not being
 #       properly separated.
 #
+#       Fix an issue on windows where the = character is not allowed for
+#       ps2pdf arguments.
+#
 # 2.3.2 Declare LaTeX input files as sources for targets so that they show
 #       up in IDEs like QtCreator.
 #
@@ -709,8 +712,17 @@ function(latex_setup_variables)
     CACHE STRING "Flags passed to makenomenclature.")
   set(DVIPS_CONVERTER_FLAGS "-Ppdf -G0 -t letter"
     CACHE STRING "Flags passed to dvips.")
-  set(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
-    CACHE STRING "Flags passed to ps2pdf.")
+  if(NOT WIN32)
+    set(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct=100 -dCompatibilityLevel=1.3 -dSubsetFonts=true -dEmbedAllFonts=true -dAutoFilterColorImages=false -dAutoFilterGrayImages=false -dColorImageFilter=/FlateEncode -dGrayImageFilter=/FlateEncode -dMonoImageFilter=/FlateEncode"
+      CACHE STRING "Flags passed to ps2pdf.")
+  else()
+    # Most windows ports of ghostscript utilities use .bat files for ps2pdf
+    # commands. bat scripts interpret "=" as a special character and separate
+    # those arguments. To get around this, the ghostscript utilities also
+    # support using "#" in place of "=".
+    set(PS2PDF_CONVERTER_FLAGS "-dMaxSubsetPct#100 -dCompatibilityLevel#1.3 -dSubsetFonts#true -dEmbedAllFonts#true -dAutoFilterColorImages#false -dAutoFilterGrayImages#false -dColorImageFilter#/FlateEncode -dGrayImageFilter#/FlateEncode -dMonoImageFilter#/FlateEncode"
+      CACHE STRING "Flags passed to ps2pdf.")
+  endif()
   set(PDFTOPS_CONVERTER_FLAGS ""
     CACHE STRING "Flags passed to pdftops.")
   set(LATEX2HTML_CONVERTER_FLAGS ""
