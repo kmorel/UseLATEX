@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.0
+# Version: 2.4.1
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,11 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.1 Add ability to dump LaTeX log file when using batch mode. Batch
+#       mode suppresses most output, often including error messages. To
+#       make sure critical error messages get displayed, show the full log
+#       on failures.
 #
 # 2.4.0 Remove "-r 600" from the default PDFTOPS_CONVERTER_FLAGS. The -r flag
 #       is available from the Poppler version of pdftops, but not the Xpdf
@@ -396,6 +401,36 @@ endfunction(latex_get_filename_component)
 #############################################################################
 # Functions that perform processing during a LaTeX build.
 #############################################################################
+function(latex_execute_latex)
+  if(NOT LATEX_TARGET)
+    message(SEND_ERROR "Need to define LATEX_TARGET")
+  endif()
+
+  if(NOT LATEX_WORKING_DIRECTORY)
+    message(SEND_ERROR "Need to define LATEX_WORKING_DIRECTORY")
+  endif()
+
+  if(NOT LATEX_FULL_COMMAND)
+    message(SEND_ERROR "Need to define LATEX_FULL_COMMAND")
+  endif()
+
+  set(full_command_original "${LATEX_FULL_COMMAND}")
+  separate_arguments(LATEX_FULL_COMMAND)
+  execute_process(
+    COMMAND ${LATEX_FULL_COMMAND}
+    WORKING_DIRECTORY ${LATEX_WORKING_DIRECTORY}
+    RESULT_VARIABLE execute_result
+    )
+
+  if(NOT ${execute_result} EQUAL 0)
+    message("LaTeX command failed")
+    message("${full_command_original}")
+    message("Log output:")
+    file(READ ${LATEX_WORKING_DIRECTORY}/${LATEX_TARGET}.log log_output)
+    message(FATAL_ERROR "${log_output}")
+  endif()
+endfunction(latex_execute_latex)
+
 function(latex_makeglossaries)
   # This is really a bare bones port of the makeglossaries perl script into
   # CMake scripting.
@@ -1265,9 +1300,33 @@ function(add_latex_targets_internal)
   set(latex_build_command
     ${LATEX_COMPILER} ${LATEX_COMPILER_ARGS} ${synctex_flags} ${LATEX_MAIN_INPUT}
     )
+  if(LATEX_COMPILER_ARGS MATCHES ".*batchmode.*")
+    # Wrap command in script that dumps the log file on error. This makes sure
+    # errors can be seen.
+    set(latex_build_command
+      ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=execute_latex
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D LATEX_WORKING_DIRECTORY="${output_dir}"
+        -D LATEX_FULL_COMMAND="${latex_build_command}"
+        -P "${LATEX_USE_LATEX_LOCATION}"
+      )
+  endif()
   set(pdflatex_build_command
     ${PDFLATEX_COMPILER} ${PDFLATEX_COMPILER_ARGS} ${synctex_flags} ${LATEX_MAIN_INPUT}
     )
+  if(PDFLATEX_COMPILER_ARGS MATCHES ".*batchmode.*")
+    # Wrap command in script that dumps the log file on error. This makes sure
+    # errors can be seen.
+    set(pdflatex_build_command
+      ${CMAKE_COMMAND}
+        -D LATEX_BUILD_COMMAND=execute_latex
+        -D LATEX_TARGET=${LATEX_TARGET}
+        -D LATEX_WORKING_DIRECTORY="${output_dir}"
+        -D LATEX_FULL_COMMAND="${pdflatex_build_command}"
+        -P "${LATEX_USE_LATEX_LOCATION}"
+      )
+  endif()
 
   if(NOT LATEX_TARGET_NAME)
     set(LATEX_TARGET_NAME ${LATEX_TARGET})
@@ -1733,6 +1792,11 @@ endfunction(add_latex_document)
 
 if(LATEX_BUILD_COMMAND)
   set(command_handled)
+
+  if("${LATEX_BUILD_COMMAND}" STREQUAL execute_latex)
+    latex_execute_latex()
+    set(command_handled TRUE)
+  endif()
 
   if("${LATEX_BUILD_COMMAND}" STREQUAL makeglossaries)
     latex_makeglossaries()
