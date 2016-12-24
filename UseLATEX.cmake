@@ -61,15 +61,15 @@
 #       so all input files are copied from the source directory to the
 #       output directory.  This includes the target tex file, any tex file
 #       listed with the INPUTS option, the bibliography files listed with
-#       the BIBFILES option, and any .cls, .bst, and .clo files found in
-#       the current source directory.  Images found in the IMAGE_DIRS
-#       directories or listed by IMAGES are also copied to the output
-#       directory and converted to an appropriate format if necessary.  Any
-#       tex files also listed with the CONFIGURE option are also processed
-#       with the CMake CONFIGURE_FILE command (with the @ONLY flag).  Any
-#       file listed in CONFIGURE but not the target tex file or listed with
-#       INPUTS has no effect. DEPENDS can be used to specify generated files
-#       that are needed to compile the latex target.
+#       the BIBFILES option, and any .cls, .bst, .clo, .sty, .ist, and .fd
+#       files found in the current source directory.  Images found in the
+#       IMAGE_DIRS directories or listed by IMAGES are also copied to the
+#       output directory and converted to an appropriate format if necessary.
+#       Any tex files also listed with the CONFIGURE option are also processed
+#       with the CMake CONFIGURE_FILE command (with the @ONLY flag).  Any file
+#       listed in CONFIGURE but not the target tex file or listed with INPUTS
+#       has no effect. DEPENDS can be used to specify generated files that are
+#       needed to compile the latex target.
 #
 #       The following targets are made. The name prefix is based off of the
 #       base name of the tex file unless TARGET_NAME is specified. If
