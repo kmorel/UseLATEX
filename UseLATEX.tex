@@ -231,15 +231,11 @@ add_latex_document(MyDoc.tex
   This can help speed up building and viewing documents.
   It will also make the output image sizes smaller.
 
-  \UseLATEX will occasionally use a conversion program other than
-  ImageMagick's \textprog{magick}.  For example, \textprog{ps2pdf} will be
-  used when converting eps to pdf to get around a problem where ImageMagick
-  drops the bounding box information.  When available, the
-  \textprog{pdftops} from the Poppler utilities will be used to convert pdf
-  to eps because it better preserves vector graphics and color spaces.  At
-  any rate, you do not need to worry about setting the appropriate image
-  conversion program.  \UseLATEX will automatically select the best one and
-  issue errors or warnings if there is a problem.
+  \UseLATEX will occasionally use a conversion program other than ImageMagick's \textprog{magick} or \textprog{convert}.
+  For example, \textprog{ps2pdf} will be used when converting eps to pdf to get around a problem where ImageMagick drops the bounding box information.
+  When available, the \textprog{pdftops} from the Poppler utilities will be used to convert pdf to eps because it better preserves vector graphics and color spaces.
+  At any rate, you do not need to worry about setting the appropriate image conversion program.
+  \UseLATEX will automatically select the best one and issue errors or warnings if there is a problem.
 
   The \textcmake{IMAGE\_DIRS} option tries to identify image files by their
   extensions. The current list of image extensions \UseLATEX checks for is:
@@ -1137,7 +1133,7 @@ something like my-image.pdf.
 
   \UseLATEX has the ability to find image files and automatically convert
   them to a format \latex understands. Usually this conversion happens with
-  the ImageMagick \textprog{magick} program.
+  the ImageMagick \textprog{magick} or \textprog{convert} program.
 
   Users occasionally report that image formats that should be supported
   because ImageMagick can convert them are ignored by \UseLATEX. This can
@@ -1270,6 +1266,8 @@ something like my-image.pdf.
   \item[Matthias Bach] Instructions for using \lualatex.
   \item[Martin Baute] Check for Windows version of convert being used
     instead of ImageMagick's version.
+  \item[Izaak Beekman]
+    Workaround for bug in Imagemagick 7.0 when using \textcmakevar{LATEX\_SMALL\_IMAGES}.
   \item[Arnout Boelens] Example of using gri in conjunction with \latex.
   \item[Mark de Wever] Fixes for interactions between the
     \textprog{makeglossaries} and \bibtex commands.
