@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.1
+# Version: 2.4.2
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,10 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.2 Prefer the convert program over the magick program on non-Windows
+#       platforms. Turns out ImageMagick 7.0 has a bug in the magick program
+#       that prevents it from working with LATEX_SMALL_IMAGES.
 #
 # 2.4.1 Add ability to dump LaTeX log file when using batch mode. Batch
 #       mode suppresses most output, often including error messages. To
@@ -869,8 +873,22 @@ function(latex_setup_variables)
   set(PS2PDF_CONVERTER_ARGS "${PS2PDF_CONVERTER_FLAGS}" CACHE INTERNAL "")
   set(PDFTOPS_CONVERTER_ARGS "${PDFTOPS_CONVERTER_FLAGS}" CACHE INTERNAL "")
 
+  # As of ImageMagick 7.0, there are two programs that essentially do the
+  # same thing: magick and convert. On Windows systems, we definitely want
+  # to prefer magick because convert is also the name of a system command
+  # that reformats your hard drive. (I know, scary but it's actually pretty
+  # unlikely to accidently call convert in a way that will actually format
+  # your hard drive.) On other systems, ImageMagick seems to be moving toward
+  # using magick, but there is a bug in magick that prevents the
+  # LATEX_SMALL_IMAGES feature from working. For now, prefer convert on
+  # non-Windows. That might change in the future.
+  if(WIN32)
+    set(imagemagick_convert_names magick convert)
+  else()
+    set(imagemagick_convert_names convert magick)
+  endif()
   find_program(IMAGEMAGICK_CONVERT
-    NAMES magick convert
+    NAMES ${imagemagick_convert_names}
     DOC "The convert program that comes with ImageMagick (available at http://www.imagemagick.org)."
     )
   mark_as_advanced(IMAGEMAGICK_CONVERT)
