@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.1
+# Version: 2.4.2
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,10 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.2 Fix an issue where new versions of ImageMagick expect the order of
+#       options in command line execution of magick/convert. (See, for
+#       example, http://www.imagemagick.org/Usage/basics/#why.)
 #
 # 2.4.1 Add ability to dump LaTeX log file when using batch mode. Batch
 #       mode suppresses most output, often including error messages. To
@@ -1036,17 +1040,24 @@ function(latex_add_convert_command
         message(SEND_ERROR "IMAGEMAGICK_CONVERT set to Window's convert.exe for changing file systems rather than ImageMagick's convert for changing image formats. Please make sure ImageMagick is installed (available at http://www.imagemagick.org). If you have a recent version of ImageMagick (7.0 or higher), use the magick program instead of convert for IMAGEMAGICK_CONVERT.")
       else()
         set(converter ${IMAGEMAGICK_CONVERT})
+        # ImageMagick requires a special order of arguments where resize and
+        # arguments of that nature must be placed after the input image path.
+        add_custom_command(OUTPUT ${output_path}
+          COMMAND ${converter}
+            ARGS ${input_path} ${convert_flags} ${output_path}
+          DEPENDS ${input_path}
+          )
       endif()
     else()
       message(SEND_ERROR "Could not find convert program. Please download ImageMagick from http://www.imagemagick.org and install.")
     endif()
+  else() # Not ImageMagick convert
+    add_custom_command(OUTPUT ${output_path}
+      COMMAND ${converter}
+        ARGS ${convert_flags} ${input_path} ${output_path}
+      DEPENDS ${input_path}
+      )
   endif()
-
-  add_custom_command(OUTPUT ${output_path}
-    COMMAND ${converter}
-      ARGS ${convert_flags} ${input_path} ${output_path}
-    DEPENDS ${input_path}
-    )
 endfunction(latex_add_convert_command)
 
 # Makes custom commands to convert a file to a particular type.
