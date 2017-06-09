@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.2
+# Version: 2.4.3
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,12 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.3 Check for warnings from the natbib package. When using natbib,
+#       warnings for missing bibliography references look different. So
+#       far, natbib seems to be quiet unless something is important, so
+#       look for all natbib warnings. (We can change this later if
+#       necessary.)
 #
 # 2.4.2 Fix an issue where new versions of ImageMagick expect the order of
 #       options in command line execution of magick/convert. (See, for
@@ -692,6 +698,16 @@ function(latex_check_important_warnings)
     set(found_error TRUE)
     message("\nFound missing reference warnings.")
     foreach(warning ${reference_warnings})
+      message("${warning}")
+    endforeach(warning)
+  endif()
+
+  # Check for natbib warnings
+  file(STRINGS ${log_file} natbib_warnings REGEX "^Package natbib Warning:")
+  if(natbib_warnings)
+    set(found_error TRUE)
+    message("\nFound natbib package warnings.")
+    foreach(warning ${natbib_warnings})
       message("${warning}")
     endforeach(warning)
   endif()
