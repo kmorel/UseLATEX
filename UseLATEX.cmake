@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.3
+# Version: 2.4.4
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,10 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.4 Improve error reporting message when LaTeX fails.
+#
+#       When LaTeX fails, delete the output file, which is invalid.
 #
 # 2.4.3 Check for warnings from the natbib package. When using natbib,
 #       warnings for missing bibliography references look different. So
@@ -424,6 +428,10 @@ function(latex_execute_latex)
     message(SEND_ERROR "Need to define LATEX_FULL_COMMAND")
   endif()
 
+  if(NOT LATEX_OUTPUT_FILE)
+    message(SEND_ERROR "Need to define LATEX_OUTPUT_FILE")
+  endif()
+
   set(full_command_original "${LATEX_FULL_COMMAND}")
   separate_arguments(LATEX_FULL_COMMAND)
   execute_process(
@@ -433,11 +441,17 @@ function(latex_execute_latex)
     )
 
   if(NOT ${execute_result} EQUAL 0)
-    message("LaTeX command failed")
+    # LaTeX tends to write a file when a failure happens. Delete that file so
+    # that LaTeX will run again.
+    file(REMOVE "${LATEX_WORKING_DIRECTORY}/${LATEX_OUTPUT_FILE}")
+
+    message("\n\nLaTeX command failed")
     message("${full_command_original}")
     message("Log output:")
     file(READ ${LATEX_WORKING_DIRECTORY}/${LATEX_TARGET}.log log_output)
-    message(FATAL_ERROR "${log_output}")
+    message("${log_output}")
+    message(FATAL_ERROR
+      "Successfully executed LaTeX, but LaTeX returned an error.")
   endif()
 endfunction(latex_execute_latex)
 
@@ -1336,6 +1350,7 @@ function(add_latex_targets_internal)
         -D LATEX_TARGET=${LATEX_TARGET}
         -D LATEX_WORKING_DIRECTORY="${output_dir}"
         -D LATEX_FULL_COMMAND="${latex_build_command}"
+        -D LATEX_OUTPUT_FILE="${LATEX_TARGET}.dvi"
         -P "${LATEX_USE_LATEX_LOCATION}"
       )
   endif()
@@ -1351,6 +1366,7 @@ function(add_latex_targets_internal)
         -D LATEX_TARGET=${LATEX_TARGET}
         -D LATEX_WORKING_DIRECTORY="${output_dir}"
         -D LATEX_FULL_COMMAND="${pdflatex_build_command}"
+        -D LATEX_OUTPUT_FILE="${LATEX_TARGET}.pdf"
         -P "${LATEX_USE_LATEX_LOCATION}"
       )
   endif()
