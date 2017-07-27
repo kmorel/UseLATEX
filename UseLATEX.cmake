@@ -119,6 +119,10 @@
 #
 #       When LaTeX fails, delete the output file, which is invalid.
 #
+#       Add warnings for "missing characters." These usually mean that a
+#       non-ASCII character is in the document and will not be printed
+#       correctly.
+#
 # 2.4.3 Check for warnings from the natbib package. When using natbib,
 #       warnings for missing bibliography references look different. So
 #       far, natbib seems to be quiet unless something is important, so
@@ -706,33 +710,61 @@ function(latex_check_important_warnings)
 
   set(found_error)
 
+  file(READ ${log_file} log)
+
   # Check for undefined references
-  file(STRINGS ${log_file} reference_warnings REGEX "Reference.*undefined")
+  string(REGEX MATCHALL
+    "\n[^\n]*Reference[^\n]*undefined[^\n]*"
+    reference_warnings
+    "${log}")
   if(reference_warnings)
     set(found_error TRUE)
     message("\nFound missing reference warnings.")
     foreach(warning ${reference_warnings})
-      message("${warning}")
+      string(STRIP "${warning}" warning_no_newline)
+      message("${warning_no_newline}")
     endforeach(warning)
   endif()
 
   # Check for natbib warnings
-  file(STRINGS ${log_file} natbib_warnings REGEX "^Package natbib Warning:")
+  string(REGEX MATCHALL
+    "\nPackage natbib Warning:[^\n]*"
+    natbib_warnings
+    "${log}")
   if(natbib_warnings)
     set(found_error TRUE)
     message("\nFound natbib package warnings.")
     foreach(warning ${natbib_warnings})
-      message("${warning}")
+      string(STRIP "${warning}" warning_no_newline)
+      message("${warning_no_newline}")
     endforeach(warning)
   endif()
 
   # Check for overfull
-  file(STRINGS ${log_file} overfull_warnings REGEX "^Overfull")
+  string(REGEX MATCHALL
+    "\nOverfull[^\n]*"
+    overfull_warnings
+    "${log}")
   if(overfull_warnings)
     set(found_error TRUE)
     message("\nFound overfull warnings. These are indicative of layout errors.")
     foreach(warning ${overfull_warnings})
-      message("${warning}")
+      string(STRIP "${warning}" warning_no_newline)
+      message("${warning_no_newline}")
+    endforeach(warning)
+  endif()
+
+  # Check for invalid characters
+  string(REGEX MATCHALL
+    "\nMissing character:[^\n]*"
+    invalid_character_warnings
+    "${log}")
+  if(invalid_character_warnings)
+    set(found_error TRUE)
+    message("\nFound invalid character warnings. These characters are likely not printed correctly.")
+    foreach(warning ${invalid_character_warnings})
+      string(STRIP "${warning}" warning_no_newline)
+      message("${warning_no_newline}")
     endforeach(warning)
   endif()
 
