@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.4
+# Version: 2.4.5
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,8 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.5 Fix issues with files and paths containing spaces.
 #
 # 2.4.4 Improve error reporting message when LaTeX fails.
 #
@@ -437,7 +439,26 @@ function(latex_execute_latex)
   endif()
 
   set(full_command_original "${LATEX_FULL_COMMAND}")
-  separate_arguments(LATEX_FULL_COMMAND)
+
+  # Chose the native method for parsing command arguments. Newer versions of
+  # CMake allow you to just use NATIVE_COMMAND.
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.9)
+    set(separate_arguments_mode NATIVE_COMMAND)
+  else()
+    if (WIN32)
+      set(separate_arguments_mode WINDOWS_COMMAND)
+    else()
+      set(separate_arguments_mode UNIX_COMMAND)
+    endif()
+  endif()
+
+  # Preps variables for use in execute_process.
+  # Even though we expect LATEX_WORKING_DIRECTORY to have a single "argument,"
+  # we also want to make sure that we strip out any escape characters that can
+  # foul up the WORKING_DIRECTORY argument.
+  separate_arguments(LATEX_FULL_COMMAND UNIX_COMMAND "${LATEX_FULL_COMMAND}")
+  separate_arguments(LATEX_WORKING_DIRECTORY UNIX_COMMAND "${LATEX_WORKING_DIRECTORY}")
+
   execute_process(
     COMMAND ${LATEX_FULL_COMMAND}
     WORKING_DIRECTORY ${LATEX_WORKING_DIRECTORY}
@@ -1139,10 +1160,15 @@ function(latex_convert_image
 
   # Check input filename for potential problems with LaTeX.
   latex_get_filename_component(name "${input_file}" NAME_WE)
-  if(name MATCHES ".*\\..*")
-    string(REPLACE "." "-" suggested_name "${name}")
-    set(suggested_name "${suggested_name}${extension}")
-    message(WARNING "Some LaTeX distributions have problems with image file names with multiple extensions.  Consider changing ${name}${extension} to something like ${suggested_name}.")
+  set(suggested_name "${name}")
+  if(suggested_name MATCHES ".*\\..*")
+    string(REPLACE "." "-" suggested_name "${suggested_name}")
+  endif()
+  if(suggested_name MATCHES ".* .*")
+    string(REPLACE " " "-" suggested_name "${suggested_name}")
+  endif()
+  if(NOT suggested_name STREQUAL name)
+    message(WARNING "Some LaTeX distributions have problems with image file names with multiple extensions or spaces. Consider changing ${name}${extension} to something like ${suggested_name}${extension}.")
   endif()
 
   string(REGEX REPLACE "\\.[^.]*\$" ${output_extension} output_file
@@ -1363,6 +1389,8 @@ function(parse_add_latex_arguments command latex_main_input)
 endfunction(parse_add_latex_arguments)
 
 function(add_latex_targets_internal)
+  latex_get_output_path(output_dir)
+
   if(LATEX_USE_SYNCTEX)
     set(synctex_flags ${LATEX_SYNCTEX_ARGS})
   else()
@@ -1404,7 +1432,9 @@ function(add_latex_targets_internal)
   endif()
 
   if(NOT LATEX_TARGET_NAME)
-    set(LATEX_TARGET_NAME ${LATEX_TARGET})
+    # Use the main filename (minus the .tex) as the target name. Remove any
+    # spaces since CMake cannot have spaces in its target names.
+    string(REPLACE " " "_" LATEX_TARGET_NAME ${LATEX_TARGET})
   endif()
 
   # Some LaTeX commands may need to be modified (or may not work) if the main

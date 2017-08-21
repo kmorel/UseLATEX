@@ -1,0 +1,4 @@
+This test checks to make sure there are no problems with compiling a LaTeX
+file in a directory with spaces in the name or a file with spaces in the
+name. LaTeX itself is pretty intolerant about including files with spaces
+in the name, but our CMake code should not be.
