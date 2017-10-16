@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.5
+# Version: 2.4.6
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,8 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.6 Fix parse issue with older versions of CMake.
 #
 # 2.4.5 Fix issues with files and paths containing spaces.
 #
@@ -442,7 +444,7 @@ function(latex_execute_latex)
 
   # Chose the native method for parsing command arguments. Newer versions of
   # CMake allow you to just use NATIVE_COMMAND.
-  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.9)
+  if (CMAKE_VERSION VERSION_GREATER 3.8)
     set(separate_arguments_mode NATIVE_COMMAND)
   else()
     if (WIN32)
