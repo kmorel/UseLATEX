@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.6
+# Version: 2.4.7
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,8 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.7 Fix synctex issue with absolute paths not being converted.
 #
 # 2.4.6 Fix parse issue with older versions of CMake.
 #
@@ -677,6 +679,8 @@ function(latex_correct_synctex)
   if(NOT LATEX_BINARY_DIRECTORY)
     message(SEND_ERROR "Need to define LATEX_BINARY_DIRECTORY")
   endif()
+  message("${LATEX_BINARY_DIRECTORY}")
+  message("${LATEX_SOURCE_DIRECTORY}")
 
   set(synctex_file ${LATEX_BINARY_DIRECTORY}/${LATEX_TARGET}.synctex)
   set(synctex_file_gz ${synctex_file}.gz)
@@ -694,13 +698,24 @@ function(latex_correct_synctex)
     message("Reading synctex file.")
     file(READ ${synctex_file} synctex_data)
 
-    message("Replacing relative with absolute paths.")
-    string(REGEX REPLACE
-      "(Input:[0-9]+:)([^/\n][^\n]*)"
-      "\\1${LATEX_SOURCE_DIRECTORY}/\\2"
-      synctex_data
-      "${synctex_data}"
-      )
+    message("Replacing output paths with input paths.")
+    foreach(extension tex cls bst clo sty ist fd)
+      # Relative paths
+      string(REGEX REPLACE
+        "(Input:[0-9]+:)([^/\n][^\n]\\.${extension}*)"
+        "\\1${LATEX_SOURCE_DIRECTORY}/\\2"
+        synctex_data
+        "${synctex_data}"
+        )
+
+      # Absolute paths
+      string(REGEX REPLACE
+        "(Input:[0-9]+:)${LATEX_BINARY_DIRECTORY}([^\n]*\\.${extension})"
+        "\\1${LATEX_SOURCE_DIRECTORY}\\2"
+        synctex_data
+        "${synctex_data}"
+        )
+    endforeach(extension)
 
     message("Writing synctex file.")
     file(WRITE ${synctex_file} "${synctex_data}")
