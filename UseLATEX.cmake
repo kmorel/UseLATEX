@@ -1,6 +1,6 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 2.4.6
+# Version: 2.4.7
 # Author: Kenneth Moreland <kmorel@sandia.gov>
 #
 # Copyright 2004, 2015 Sandia Corporation.
@@ -114,6 +114,9 @@
 #       in the multibib package.
 #
 # History:
+#
+# 2.4.7 Fix some issues with spaces in the path of the working directory where
+#       LaTeX is executed.
 #
 # 2.4.6 Fix parse issue with older versions of CMake.
 #
@@ -459,11 +462,11 @@ function(latex_execute_latex)
   # we also want to make sure that we strip out any escape characters that can
   # foul up the WORKING_DIRECTORY argument.
   separate_arguments(LATEX_FULL_COMMAND UNIX_COMMAND "${LATEX_FULL_COMMAND}")
-  separate_arguments(LATEX_WORKING_DIRECTORY UNIX_COMMAND "${LATEX_WORKING_DIRECTORY}")
+  separate_arguments(LATEX_WORKING_DIRECTORY_SEP UNIX_COMMAND "${LATEX_WORKING_DIRECTORY}")
 
   execute_process(
     COMMAND ${LATEX_FULL_COMMAND}
-    WORKING_DIRECTORY ${LATEX_WORKING_DIRECTORY}
+    WORKING_DIRECTORY "${LATEX_WORKING_DIRECTORY_SEP}"
     RESULT_VARIABLE execute_result
     )
 
@@ -475,7 +478,7 @@ function(latex_execute_latex)
     message("\n\nLaTeX command failed")
     message("${full_command_original}")
     message("Log output:")
-    file(READ ${LATEX_WORKING_DIRECTORY}/${LATEX_TARGET}.log log_output)
+    file(READ "${LATEX_WORKING_DIRECTORY}/${LATEX_TARGET}.log" log_output)
     message("${log_output}")
     message(FATAL_ERROR
       "Successfully executed LaTeX, but LaTeX returned an error.")
