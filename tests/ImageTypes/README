@@ -1,5 +1,0 @@
-This test exercises the ability to convert images of various types to those
-that LaTeX understands.  In particular, the more obscure image types should
-be placed here to make sure the conversion does not regress.
-
-It is also good to check that the LATEX_SMALL_IMAGES feature is working.

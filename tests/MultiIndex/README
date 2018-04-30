@@ -1,4 +1,0 @@
-This test exercises the building of files that use multiple indices with
-the multind package. For completeness, making a single index with the
-makeindex package is also tested. If both documents builds, then the test
-passes.
